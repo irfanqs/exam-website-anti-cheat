@@ -1,0 +1,185 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Admin ---
+
+model Admin {
+  id           String @id @default(cuid())
+  name         String
+  email        String @unique
+  passwordHash String
+
+  exams Exam[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- Exam & Questions (PRD §4.2, §4.3) ---
+
+model Exam {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  code        String   @unique // kode/link unik untuk peserta masuk
+
+  durationMinutes Int // durasi pengerjaan, mis. 60
+
+  opensAt  DateTime? // jadwal buka ujian (opsional)
+  closesAt DateTime? // jadwal tutup ujian (opsional)
+
+  shuffleQuestions Boolean @default(false)
+
+  // Kebijakan anti-cheat (PRD §4.4)
+  tabViolationTolerance Int     @default(0) // 0 = langsung submit saat pelanggaran pertama
+  requireFullscreen     Boolean @default(false)
+
+  status ExamStatus @default(DRAFT)
+
+  admin   Admin  @relation(fields: [adminId], references: [id])
+  adminId String
+
+  questions Question[]
+  sessions  ExamSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+model Question {
+  id     String       @id @default(cuid())
+  exam   Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  examId String
+
+  type QuestionType
+
+  text   String
+  order  Int
+  points Float // bobot nilai soal ini
+
+  // Untuk isian singkat / essay: jawaban benar (jika ada) dipakai auto-scoring
+  correctTextAnswer String?
+
+  choices Choice[]
+  answers Answer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  SHORT_ANSWER
+  ESSAY
+}
+
+model Choice {
+  id         String   @id @default(cuid())
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String
+
+  text      String
+  isCorrect Boolean @default(false)
+  order     Int
+
+  answerChoices AnswerChoice[]
+}
+
+// --- Participant exam-taking session (PRD §4.1, §4.5) ---
+
+model ExamSession {
+  id     String @id @default(cuid())
+  exam   Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+  examId String
+
+  participantName String
+  participantRef  String? // NIM/NIS/email, opsional
+
+  startedAt DateTime  @default(now())
+  submittedAt DateTime?
+
+  status SessionStatus @default(IN_PROGRESS)
+
+  totalScore Float?
+
+  answers    Answer[]
+  violations ViolationLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([examId])
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  SUBMITTED
+  AUTO_SUBMITTED_TIMEOUT
+  AUTO_SUBMITTED_VIOLATION
+}
+
+model Answer {
+  id        String      @id @default(cuid())
+  session   ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String
+
+  textAnswer String? // untuk SHORT_ANSWER / ESSAY
+
+  choices AnswerChoice[] // untuk SINGLE_CHOICE / MULTIPLE_CHOICE
+
+  score          Float? // skor yang diberikan (auto atau manual)
+  needsManualGrading Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([sessionId, questionId])
+}
+
+model AnswerChoice {
+  id       String @id @default(cuid())
+  answer   Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  answerId String
+
+  choice   Choice @relation(fields: [choiceId], references: [id], onDelete: Cascade)
+  choiceId String
+
+  @@unique([answerId, choiceId])
+}
+
+// --- Anti-cheat violation log (PRD §4.4, Appendix A) ---
+
+model ViolationLog {
+  id        String      @id @default(cuid())
+  session   ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+
+  type      ViolationType
+  occurredAt DateTime @default(now())
+
+  @@index([sessionId])
+}
+
+enum ViolationType {
+  TAB_HIDDEN
+  WINDOW_BLUR
+  EXIT_FULLSCREEN
+}

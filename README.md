@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ujian Online Anti-Cheat
 
-## Getting Started
+Platform ujian online mirip Google Forms dengan tambahan: penilaian per soal, timer auto-submit, dan deteksi kecurangan saat peserta berpindah tab. Spesifikasi lengkap ada di [`PRD.md`](./PRD.md).
 
-First, run the development server:
+## Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Frontend/Backend**: Next.js (App Router) + TypeScript + Tailwind CSS
+- **Database**: PostgreSQL via Prisma ORM (driver adapter `@prisma/adapter-pg`)
+- **Anti-cheat**: Page Visibility API, `blur`/`focus`, Fullscreen API, `sendBeacon` — lihat `PRD.md` Appendix A
+
+## Setup
+
+1. Salin environment variable:
+   ```bash
+   cp .env.example .env
+   ```
+2. Siapkan database PostgreSQL, lalu isi `DATABASE_URL` di `.env`.
+   - Lokal cepat: `npx prisma dev`
+   - Cloud: `npx create-db` (Prisma Postgres) atau pakai Supabase/Neon
+3. Install dependencies & jalankan migrasi:
+   ```bash
+   npm install
+   npx prisma migrate dev --name init
+   ```
+4. Jalankan dev server:
+   ```bash
+   npm run dev
+   ```
+5. Buka [http://localhost:3000](http://localhost:3000).
+
+## Struktur Project
+
+```
+prisma/schema.prisma        # Model: Admin, Exam, Question, Choice, ExamSession, Answer, ViolationLog
+src/app/page.tsx             # Landing page (tombol Admin / Peserta)
+src/app/admin/               # Login admin, dashboard, buat ujian
+src/app/join/                 # Peserta masuk pakai kode ujian
+src/app/exam/[sessionId]/     # Halaman pengerjaan ujian (timer + anti-cheat)
+src/app/api/                  # Route handlers: exams, sessions, answers, violations, submit
+src/components/AntiCheatMonitor.tsx  # Deteksi tab switch / fullscreen exit
+src/components/ExamTimer.tsx         # Countdown berbasis deadline server
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Status Implementasi (Scaffold Awal)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Sudah ada:
+- Skema database lengkap sesuai PRD §4
+- Landing page, join flow, exam-taking flow dengan timer & anti-cheat dasar
+- API untuk buat ujian, join sesi, autosave jawaban, lapor pelanggaran, submit
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Belum ada (lihat `PRD.md` §11 untuk keputusan yang diperlukan):
+- Autentikasi admin sungguhan (NextAuth/Clerk) — saat ini `admin/login` hanya UI, belum terhubung
+- Manajemen soal (tambah/edit soal & kunci jawaban) dari UI admin
+- Auto-scoring & penilaian manual essay
+- Export hasil ke Excel/CSV/PDF
+- Dashboard monitoring real-time (saat ini hanya list statis dari DB)
