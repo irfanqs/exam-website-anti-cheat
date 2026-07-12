@@ -18,7 +18,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">Dashboard Ujian</h1>
           <p className="text-sm text-zinc-500">{session.user.email}</p>
@@ -39,9 +39,10 @@ export default async function AdminDashboardPage() {
       ) : (
         <div className="space-y-3">
           {exams.map((exam) => (
-            <div
+            <Link
               key={exam.id}
-              className="flex items-center justify-between rounded-xl border border-black/[.08] p-4 dark:border-white/[.145]"
+              href={`/admin/exams/${exam.id}`}
+              className="flex items-center justify-between rounded-xl border border-black/[.08] p-4 hover:bg-black/[.02] dark:border-white/[.145] dark:hover:bg-white/[.03]"
             >
               <div>
                 <p className="font-medium">{exam.title}</p>
@@ -50,7 +51,7 @@ export default async function AdminDashboardPage() {
                   {exam._count.sessions} peserta · {exam.status}
                 </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

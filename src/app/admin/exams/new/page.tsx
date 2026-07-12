@@ -13,7 +13,7 @@ export default function NewExamPage() {
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
-    await fetch("/api/exams", {
+    const res = await fetch("/api/exams", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -28,7 +28,9 @@ export default function NewExamPage() {
     });
 
     setLoading(false);
-    router.push("/admin");
+
+    const { exam } = await res.json();
+    router.push(`/admin/exams/${exam.id}`);
   }
 
   return (
@@ -130,8 +132,8 @@ export default function NewExamPage() {
         </button>
 
         <p className="text-center text-xs text-zinc-500">
-          Setelah dibuat, tambahkan soal dari halaman dashboard sebelum publish.
-          Manajemen soal (§4.2) belum diimplementasi di scaffold ini.
+          Setelah disimpan, Anda akan diarahkan ke halaman ujian untuk
+          menambahkan soal sebelum publish.
         </p>
       </form>
     </div>
