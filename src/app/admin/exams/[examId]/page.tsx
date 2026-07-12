@@ -44,6 +44,7 @@ export default async function ExamDetailPage({
         text: q.text,
         type: q.type,
         points: q.points,
+        correctTextAnswer: q.correctTextAnswer,
         choices: q.choices.map((c) => ({ id: c.id, text: c.text, isCorrect: c.isCorrect })),
       }))}
       participants={exam.sessions.map((s) => ({

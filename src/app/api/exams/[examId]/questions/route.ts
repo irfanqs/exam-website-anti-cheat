@@ -20,6 +20,13 @@ export async function POST(
     return NextResponse.json({ error: "Exam not found" }, { status: 404 });
   }
 
+  if (exam.status !== "DRAFT") {
+    return NextResponse.json(
+      { error: "Soal hanya bisa ditambahkan selagi ujian berstatus draft" },
+      { status: 400 }
+    );
+  }
+
   const { type, text, points, choices, correctTextAnswer } = await req.json();
 
   if (!text || !points || !QUESTION_TYPES.includes(type)) {
