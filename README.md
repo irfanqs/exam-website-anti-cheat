@@ -53,10 +53,13 @@ src/app/page.tsx                  # Landing page (tombol Admin / Peserta)
 src/app/admin/login/page.tsx      # Form login admin
 src/app/admin/page.tsx            # Dashboard ujian (di-scope ke admin yang login)
 src/app/admin/exams/new/page.tsx  # Form buat ujian baru
+src/app/admin/exams/[examId]/     # Detail ujian: daftar soal, tambah soal, publish
 src/app/join/page.tsx             # Peserta masuk pakai kode ujian
 src/app/exam/[sessionId]/         # Halaman pengerjaan ujian (timer + anti-cheat)
 src/app/api/auth/[...nextauth]/   # Route handler NextAuth (login/logout)
 src/app/api/exams/                # Buat ujian
+src/app/api/exams/[examId]/questions/  # Tambah/hapus soal pada suatu ujian
+src/app/api/exams/[examId]/publish/    # Publish ujian (DRAFT -> PUBLISHED)
 src/app/api/sessions/             # Peserta join ujian
 src/app/api/answers/              # Autosave jawaban peserta
 src/app/api/violations/           # Lapor & tindak lanjut pelanggaran anti-cheat
@@ -72,11 +75,12 @@ Sudah ada:
 - Skema database lengkap sesuai PRD §4
 - Landing page, join flow, exam-taking flow dengan timer & anti-cheat (toggle aktif/nonaktif + 3 mode aksi: peringatan/catat saja/akhiri otomatis)
 - Autentikasi admin (NextAuth Credentials) — `/admin/*` terlindungi middleware, ujian di-scope ke admin yang login
+- Manajemen soal: tambah soal (pilihan ganda satu/multi jawaban, isian singkat, essay) + bobot nilai, hapus soal, publish ujian (butuh minimal 1 soal)
 - API untuk buat ujian, join sesi, autosave jawaban, lapor pelanggaran, submit
 
 Belum ada (lihat `PRD.md` §11 untuk keputusan yang diperlukan):
 - Registrasi admin dari UI (saat ini hanya lewat `npm run db:seed`)
-- Manajemen soal (tambah/edit soal & kunci jawaban) dari UI admin
+- Edit soal yang sudah dibuat (saat ini hanya tambah/hapus)
 - Auto-scoring & penilaian manual essay
 - Export hasil ke Excel/CSV/PDF
 - Dashboard monitoring real-time (saat ini hanya list statis dari DB)
