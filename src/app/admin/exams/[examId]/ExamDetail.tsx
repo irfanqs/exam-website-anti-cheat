@@ -37,8 +37,15 @@ export function ExamDetail({ examId, title, code, status, questions }: Props) {
   const [correctChoiceIndexes, setCorrectChoiceIndexes] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const isChoiceType = type === "SINGLE_CHOICE" || type === "MULTIPLE_CHOICE";
+
+  async function handleCopyCode() {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function handleAddQuestion(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -117,8 +124,16 @@ export function ExamDetail({ examId, title, code, status, questions }: Props) {
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">{title}</h1>
-          <p className="text-sm text-zinc-500">
-            Kode: {code} · Status: {status}
+          <p className="flex items-center gap-2 text-sm text-zinc-500">
+            <span>
+              Kode: {code} · Status: {status}
+            </span>
+            <button
+              onClick={handleCopyCode}
+              className="rounded border border-black/[.08] px-2 py-0.5 text-xs hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.05]"
+            >
+              {copied ? "Tersalin!" : "Salin Kode"}
+            </button>
           </p>
         </div>
         {status === "DRAFT" && (
