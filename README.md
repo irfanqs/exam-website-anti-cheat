@@ -42,18 +42,28 @@ Platform ujian online mirip Google Forms dengan tambahan: penilaian per soal, ti
 ## Struktur Project
 
 ```
-prisma/schema.prisma          # Model: Admin, Exam, Question, Choice, ExamSession, Answer, ViolationLog
-prisma/seed.ts                 # Buat akun admin awal (npm run db:seed)
-src/lib/auth.config.ts         # Konfigurasi NextAuth edge-safe (dipakai middleware)
-src/lib/auth.ts                # Konfigurasi NextAuth penuh (Credentials provider + Prisma)
-src/middleware.ts               # Proteksi rute /admin/*
-src/app/page.tsx                # Landing page (tombol Admin / Peserta)
-src/app/admin/                  # Login admin, dashboard, buat ujian
-src/app/join/                   # Peserta masuk pakai kode ujian
-src/app/exam/[sessionId]/       # Halaman pengerjaan ujian (timer + anti-cheat)
-src/app/api/                    # Route handlers: exams, sessions, answers, violations, submit, auth
+prisma/schema.prisma              # Model: Admin, Exam, Question, Choice, ExamSession, Answer, ViolationLog
+prisma/seed.ts                    # Buat akun admin awal (npm run db:seed)
+src/proxy.ts                      # Proteksi rute /admin/* (konvensi Next.js 16, pengganti middleware.ts)
+src/lib/auth.config.ts            # Konfigurasi NextAuth edge-safe (dipakai src/proxy.ts)
+src/lib/auth.ts                   # Konfigurasi NextAuth penuh (Credentials provider + Prisma)
+src/lib/prisma.ts                 # Prisma client singleton (driver adapter @prisma/adapter-pg)
+src/types/next-auth.d.ts          # Augmentasi tipe session.user.id
+src/app/page.tsx                  # Landing page (tombol Admin / Peserta)
+src/app/admin/login/page.tsx      # Form login admin
+src/app/admin/page.tsx            # Dashboard ujian (di-scope ke admin yang login)
+src/app/admin/exams/new/page.tsx  # Form buat ujian baru
+src/app/join/page.tsx             # Peserta masuk pakai kode ujian
+src/app/exam/[sessionId]/         # Halaman pengerjaan ujian (timer + anti-cheat)
+src/app/api/auth/[...nextauth]/   # Route handler NextAuth (login/logout)
+src/app/api/exams/                # Buat ujian
+src/app/api/sessions/             # Peserta join ujian
+src/app/api/answers/              # Autosave jawaban peserta
+src/app/api/violations/           # Lapor & tindak lanjut pelanggaran anti-cheat
+src/app/api/exam-sessions/submit/ # Submit ujian (manual/timeout/violation)
 src/components/AntiCheatMonitor.tsx  # Deteksi tab switch / fullscreen exit
 src/components/ExamTimer.tsx         # Countdown berbasis deadline server
+src/components/SignOutButton.tsx     # Tombol keluar di dashboard admin
 ```
 
 ## Status Implementasi (Scaffold Awal)
