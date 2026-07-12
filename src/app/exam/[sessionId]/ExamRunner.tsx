@@ -16,7 +16,7 @@ type Props = {
   sessionId: string;
   deadline: string;
   examTitle: string;
-  tolerance: number;
+  antiCheatEnabled: boolean;
   requireFullscreen: boolean;
   questions: Question[];
 };
@@ -25,12 +25,13 @@ export function ExamRunner({
   sessionId,
   deadline,
   examTitle,
-  tolerance,
+  antiCheatEnabled,
   requireFullscreen,
   questions,
 }: Props) {
   const router = useRouter();
   const [submitted, setSubmitted] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
   const submitting = useRef(false);
 
   const submitExam = useCallback(
@@ -52,6 +53,31 @@ export function ExamRunner({
     },
     [sessionId, router]
   );
+
+  function handleViolation(result: {
+    violationCount: number;
+    tolerance: number;
+    action: "WARN" | "LOG_ONLY" | "AUTO_SUBMIT";
+    limitReached: boolean;
+  }) {
+    if (result.action === "AUTO_SUBMIT" && result.limitReached) {
+      // Server sudah menandai sesi sebagai auto-submitted, tinggal
+      // tampilkan status akhir di client.
+      setSubmitted(true);
+      router.refresh();
+      return;
+    }
+
+    if (result.action === "WARN") {
+      setWarning(
+        `Peringatan: Anda terdeteksi keluar dari halaman ujian (${result.violationCount}/${result.tolerance + 1}). ` +
+          (result.violationCount > result.tolerance
+            ? "Batas pelanggaran sudah tercapai."
+            : "Pelanggaran berikutnya dapat berakibat pada ujian Anda.")
+      );
+    }
+    // action === "LOG_ONLY": dicatat di server secara diam-diam, tidak ada UI yang berubah.
+  }
 
   async function saveAnswer(
     questionId: string,
@@ -76,15 +102,21 @@ export function ExamRunner({
     <div className="mx-auto max-w-2xl px-6 py-10">
       <AntiCheatMonitor
         sessionId={sessionId}
-        tolerance={tolerance}
+        enabled={antiCheatEnabled}
         requireFullscreen={requireFullscreen}
-        onLimitReached={() => submitExam("violation")}
+        onViolation={handleViolation}
       />
 
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{examTitle}</h1>
         <ExamTimer deadline={deadline} onTimeUp={() => submitExam("timeout")} />
       </div>
+
+      {warning && (
+        <div className="mb-6 rounded-lg border border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+          {warning}
+        </div>
+      )}
 
       <div className="space-y-8">
         {questions.map((q, i) => (

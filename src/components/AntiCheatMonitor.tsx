@@ -3,41 +3,60 @@
 import { useEffect, useRef } from "react";
 
 type ViolationType = "TAB_HIDDEN" | "WINDOW_BLUR" | "EXIT_FULLSCREEN";
+type ViolationAction = "WARN" | "LOG_ONLY" | "AUTO_SUBMIT";
+
+type ViolationResult = {
+  violationCount: number;
+  tolerance: number;
+  action: ViolationAction;
+  limitReached: boolean;
+};
 
 type Props = {
   sessionId: string;
-  tolerance: number; // jumlah pelanggaran yang ditoleransi sebelum auto-submit
+  enabled: boolean; // toggle Anti Cheat admin — jika false, komponen ini tidak dipasang sama sekali
   requireFullscreen: boolean;
-  onLimitReached: () => void; // dipanggil saat server konfirmasi ambang batas terlampaui
+  onViolation: (result: ViolationResult) => void;
 };
 
 /**
  * Implementasi PRD Appendix A: mendeteksi (bukan mencegah) peserta
- * berpindah tab/window, lalu melaporkannya ke server via sendBeacon.
- * Keputusan auto-submit selalu diambil server, bukan client ini.
+ * berpindah tab/window, lalu melaporkan ke server. Keputusan aksi
+ * (warn / log / auto-submit) selalu diambil & divalidasi server,
+ * bukan client ini — lihat /api/violations.
  */
 export function AntiCheatMonitor({
   sessionId,
-  tolerance,
+  enabled,
   requireFullscreen,
-  onLimitReached,
+  onViolation,
 }: Props) {
-  const violationCount = useRef(0);
+  const reporting = useRef(false);
 
   useEffect(() => {
-    function reportViolation(type: ViolationType) {
-      const payload = JSON.stringify({ sessionId, type, timestamp: Date.now() });
-      const sent = navigator.sendBeacon(
-        "/api/violations",
-        new Blob([payload], { type: "application/json" })
-      );
+    if (!enabled) return;
 
-      violationCount.current += 1;
+    async function reportViolation(type: ViolationType) {
+      if (reporting.current) return;
+      reporting.current = true;
 
-      // Fallback client-side check untuk UX cepat; keputusan final tetap
-      // divalidasi ulang oleh server saat menerima request /api/violations.
-      if (!sent || violationCount.current > tolerance) {
-        onLimitReached();
+      try {
+        // fetch + keepalive dipakai (bukan sendBeacon) supaya kita tetap bisa
+        // membaca keputusan server (warn/log/auto-submit) selama tab masih
+        // terbuka; keepalive membuat request tetap terkirim walau tab ditutup.
+        const res = await fetch("/api/violations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, type, timestamp: Date.now() }),
+          keepalive: true,
+        });
+
+        if (res.ok) {
+          const result: ViolationResult = await res.json();
+          onViolation(result);
+        }
+      } finally {
+        reporting.current = false;
       }
     }
 
@@ -71,7 +90,7 @@ export function AntiCheatMonitor({
       window.removeEventListener("blur", handleBlur);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
-  }, [sessionId, tolerance, requireFullscreen, onLimitReached]);
+  }, [sessionId, enabled, requireFullscreen, onViolation]);
 
   return null;
 }

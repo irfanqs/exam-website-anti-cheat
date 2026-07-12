@@ -6,6 +6,7 @@ import { useState } from "react";
 export default function NewExamPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [antiCheatEnabled, setAntiCheatEnabled] = useState(true);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -19,8 +20,10 @@ export default function NewExamPage() {
         title: form.get("title"),
         description: form.get("description"),
         durationMinutes: Number(form.get("durationMinutes")),
+        antiCheatEnabled,
+        violationAction: antiCheatEnabled ? form.get("violationAction") : "LOG_ONLY",
         tabViolationTolerance: Number(form.get("tabViolationTolerance")),
-        requireFullscreen: form.get("requireFullscreen") === "on",
+        requireFullscreen: antiCheatEnabled && form.get("requireFullscreen") === "on",
       }),
     });
 
@@ -62,24 +65,61 @@ export default function NewExamPage() {
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-sm font-medium">
-            Toleransi Pindah Tab (kali, sebelum auto-submit)
+        <div className="space-y-3 rounded-xl border border-black/[.08] p-4 dark:border-white/[.145]">
+          <label className="flex items-center justify-between text-sm font-medium">
+            Anti Cheat
+            <input
+              type="checkbox"
+              checked={antiCheatEnabled}
+              onChange={(e) => setAntiCheatEnabled(e.target.checked)}
+            />
           </label>
-          <input
-            name="tabViolationTolerance"
-            type="number"
-            min={0}
-            required
-            defaultValue={0}
-            className="w-full rounded-lg border border-black/[.08] px-3 py-2 dark:border-white/[.145] dark:bg-zinc-900"
-          />
-        </div>
 
-        <label className="flex items-center gap-2 text-sm">
-          <input name="requireFullscreen" type="checkbox" />
-          Wajibkan mode fullscreen selama ujian
-        </label>
+          {antiCheatEnabled ? (
+            <>
+              <p className="text-xs text-zinc-500">
+                Peserta tidak diperbolehkan berpindah tab, membuka jendela lain,
+                atau keluar dari halaman ujian. Pilih aksi saat peserta melanggar:
+              </p>
+
+              <div className="space-y-1">
+                <select
+                  name="violationAction"
+                  defaultValue="AUTO_SUBMIT"
+                  className="w-full rounded-lg border border-black/[.08] px-3 py-2 text-sm dark:border-white/[.145] dark:bg-zinc-900"
+                >
+                  <option value="WARN">Beri peringatan ke peserta</option>
+                  <option value="LOG_ONLY">Catat pelanggaran saja (diam-diam)</option>
+                  <option value="AUTO_SUBMIT">Akhiri ujian otomatis</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium">
+                  Toleransi pelanggaran sebelum aksi dijalankan (kali)
+                </label>
+                <input
+                  name="tabViolationTolerance"
+                  type="number"
+                  min={0}
+                  required
+                  defaultValue={0}
+                  className="w-full rounded-lg border border-black/[.08] px-3 py-2 text-sm dark:border-white/[.145] dark:bg-zinc-900"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 text-xs">
+                <input name="requireFullscreen" type="checkbox" />
+                Wajibkan mode fullscreen selama ujian
+              </label>
+            </>
+          ) : (
+            <p className="text-xs text-zinc-500">
+              Anti Cheat nonaktif — peserta bebas berpindah tab, membuka aplikasi
+              lain, atau keluar dari halaman ujian tanpa sanksi apa pun.
+            </p>
+          )}
+        </div>
 
         <button
           type="submit"

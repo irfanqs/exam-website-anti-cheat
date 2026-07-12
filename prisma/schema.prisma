@@ -40,7 +40,9 @@ model Exam {
   shuffleQuestions Boolean @default(false)
 
   // Kebijakan anti-cheat (PRD §4.4)
-  tabViolationTolerance Int     @default(0) // 0 = langsung submit saat pelanggaran pertama
+  antiCheatEnabled Boolean @default(true) // nonaktif = peserta bebas pindah tab tanpa sanksi
+  violationAction  ViolationAction @default(AUTO_SUBMIT) // aksi saat pelanggaran melebihi toleransi
+  tabViolationTolerance Int     @default(0) // 0 = aksi langsung dijalankan saat pelanggaran pertama
   requireFullscreen     Boolean @default(false)
 
   status ExamStatus @default(DRAFT)
@@ -59,6 +61,12 @@ enum ExamStatus {
   DRAFT
   PUBLISHED
   CLOSED
+}
+
+enum ViolationAction {
+  WARN       // tampilkan peringatan ke peserta, ujian tetap berjalan
+  LOG_ONLY   // catat pelanggaran secara diam-diam, tanpa peringatan atau sanksi
+  AUTO_SUBMIT // akhiri ujian otomatis begitu toleransi terlampaui
 }
 
 model Question {

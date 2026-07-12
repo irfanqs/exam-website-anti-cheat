@@ -35,7 +35,7 @@ export default async function ExamPage({
       sessionId={session.id}
       deadline={deadline}
       examTitle={session.exam.title}
-      tolerance={session.exam.tabViolationTolerance}
+      antiCheatEnabled={session.exam.antiCheatEnabled}
       requireFullscreen={session.exam.requireFullscreen}
       questions={session.exam.questions.map((q) => ({
         id: q.id,

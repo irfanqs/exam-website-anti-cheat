@@ -14,12 +14,25 @@ async function getOrCreateDemoAdmin() {
   });
 }
 
+const VIOLATION_ACTIONS = ["WARN", "LOG_ONLY", "AUTO_SUBMIT"] as const;
+
 export async function POST(req: NextRequest) {
-  const { title, description, durationMinutes, tabViolationTolerance, requireFullscreen } =
-    await req.json();
+  const {
+    title,
+    description,
+    durationMinutes,
+    antiCheatEnabled,
+    violationAction,
+    tabViolationTolerance,
+    requireFullscreen,
+  } = await req.json();
 
   if (!title || !durationMinutes) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  if (violationAction && !VIOLATION_ACTIONS.includes(violationAction)) {
+    return NextResponse.json({ error: "Invalid violationAction" }, { status: 400 });
   }
 
   const admin = await getOrCreateDemoAdmin();
@@ -31,6 +44,8 @@ export async function POST(req: NextRequest) {
       description,
       code,
       durationMinutes,
+      antiCheatEnabled: antiCheatEnabled ?? true,
+      violationAction: violationAction ?? "AUTO_SUBMIT",
       tabViolationTolerance: tabViolationTolerance ?? 0,
       requireFullscreen: requireFullscreen ?? false,
       adminId: admin.id,

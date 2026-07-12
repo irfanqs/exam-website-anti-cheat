@@ -81,11 +81,15 @@ Produk ini dibuat untuk menjadi alternatif Google Forms yang **fokus pada kebutu
 - Ketika waktu habis → sistem **otomatis submit** jawaban yang sudah terisi (partial submit diperbolehkan).
 
 ### 4.4 Anti-Cheat (Tab/Window Switch Detection)
-- Sistem mendeteksi event peserta berpindah tab, minimize window, atau membuka aplikasi lain (menggunakan Page Visibility API / `blur`/`focus` events browser).
-- Kebijakan yang bisa diatur admin per ujian:
-  - **Toleransi 0**: sekali pindah tab → jawaban langsung disubmit otomatis + status "Terindikasi Curang".
-  - **Toleransi N kali**: peserta diberi peringatan, disubmit otomatis setelah pelanggaran ke-N.
-- Setiap event pelanggaran dicatat: waktu kejadian, durasi di luar tab, dan dikirim ke server secara real-time (bukan hanya disimpan di client) agar tidak bisa dimanipulasi peserta.
+- Admin dapat **mengaktifkan/menonaktifkan Anti Cheat per ujian** (toggle):
+  - **Anti Cheat nonaktif**: peserta bebas berpindah tab, membuka aplikasi lain, atau keluar dari halaman ujian tanpa sanksi maupun pencatatan apa pun.
+  - **Anti Cheat aktif**: peserta tidak diperbolehkan berpindah tab, membuka jendela lain, atau keluar dari halaman ujian. Sistem mendeteksi event tersebut (menggunakan Page Visibility API / `blur`/`focus` events browser, opsional Fullscreen API).
+- Saat aktif, admin memilih **satu aksi** yang dijalankan ketika jumlah pelanggaran peserta melebihi toleransi yang diset:
+  - **Peringatan (WARN)**: peserta diberi peringatan di layar setiap kali melanggar; ujian tetap berjalan, tidak ada auto-submit.
+  - **Catat saja (LOG_ONLY)**: pelanggaran dicatat secara diam-diam untuk ditinjau admin nanti; tidak ada peringatan ke peserta maupun auto-submit.
+  - **Akhiri otomatis (AUTO_SUBMIT)**: begitu toleransi terlampaui, jawaban langsung disubmit otomatis + status sesi "Terindikasi Curang".
+- Toleransi (jumlah pelanggaran yang diizinkan sebelum aksi dijalankan) diatur per ujian; toleransi 0 berarti aksi langsung dijalankan pada pelanggaran pertama.
+- Setiap event pelanggaran (jika Anti Cheat aktif) dicatat: waktu kejadian, jenis event, dikirim ke server secara real-time (bukan hanya disimpan di client) agar tidak bisa dimanipulasi peserta. Keputusan aksi selalu divalidasi & dieksekusi di server, bukan client.
 - Log pelanggaran per peserta bisa dilihat admin di dashboard hasil.
 - Disclaimer: metode ini best-effort di level browser, bukan proctoring penuh (tidak mendeteksi HP kedua, orang lain di ruangan, dll) — akan dinyatakan jelas ke pengguna sebagai batasan produk.
 

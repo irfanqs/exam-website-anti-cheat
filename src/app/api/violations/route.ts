@@ -20,12 +20,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Session not active" }, { status: 409 });
   }
 
+  // Jika admin menonaktifkan Anti Cheat untuk ujian ini, peserta bebas
+  // berpindah tab tanpa sanksi — event tidak dicatat maupun ditindak.
+  if (!session.exam.antiCheatEnabled) {
+    return NextResponse.json({
+      violationCount: 0,
+      tolerance: session.exam.tabViolationTolerance,
+      action: "LOG_ONLY",
+      limitReached: false,
+    });
+  }
+
   await prisma.violationLog.create({
     data: { sessionId, type: type as (typeof VIOLATION_TYPES)[number] },
   });
 
   const violationCount = session.violations.length + 1;
-  const limitReached = violationCount > session.exam.tabViolationTolerance;
+  const tolerance = session.exam.tabViolationTolerance;
+  const action = session.exam.violationAction;
+  const limitReached = action === "AUTO_SUBMIT" && violationCount > tolerance;
 
   if (limitReached) {
     await prisma.examSession.update({
@@ -34,5 +47,5 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({ violationCount, limitReached });
+  return NextResponse.json({ violationCount, tolerance, action, limitReached });
 }
