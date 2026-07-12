@@ -6,7 +6,8 @@ Platform ujian online mirip Google Forms dengan tambahan: penilaian per soal, ti
 
 - **Frontend/Backend**: Next.js (App Router) + TypeScript + Tailwind CSS
 - **Database**: PostgreSQL via Prisma ORM (driver adapter `@prisma/adapter-pg`)
-- **Anti-cheat**: Page Visibility API, `blur`/`focus`, Fullscreen API, `sendBeacon` — lihat `PRD.md` Appendix A
+- **Auth Admin**: NextAuth (Auth.js v5) dengan Credentials provider, password di-hash dengan `bcryptjs`, disimpan di tabel `Admin`
+- **Anti-cheat**: Page Visibility API, `blur`/`focus`, Fullscreen API — lihat `PRD.md` Appendix A
 
 ## Setup
 
@@ -15,28 +16,42 @@ Platform ujian online mirip Google Forms dengan tambahan: penilaian per soal, ti
    cp .env.example .env
    ```
 2. Siapkan database PostgreSQL, lalu isi `DATABASE_URL` di `.env`.
-   - Lokal cepat: `npx prisma dev`
+   - Lokal cepat: `npx prisma dev --detach` (print connection string, salin ke `DATABASE_URL`)
    - Cloud: `npx create-db` (Prisma Postgres) atau pakai Supabase/Neon
-3. Install dependencies & jalankan migrasi:
+3. Isi `AUTH_SECRET` di `.env` (dipakai NextAuth untuk menandatangani session):
+   ```bash
+   openssl rand -base64 32
+   ```
+4. Install dependencies & sinkronkan schema ke database:
    ```bash
    npm install
-   npx prisma migrate dev --name init
+   npx prisma db push
    ```
-4. Jalankan dev server:
+   > Pakai `db push` untuk dev cepat. Kalau sudah pakai Postgres sungguhan (bukan `prisma dev`), ganti ke `npx prisma migrate dev --name init` supaya ada riwayat migrasi — `prisma dev` tidak mendukung shadow database yang dibutuhkan `migrate dev`.
+5. Buat akun admin awal:
+   ```bash
+   npm run db:seed
+   ```
+   Secara default membuat `admin@example.com` / `changeme123` (ubah lewat `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` di `.env` sebelum menjalankan seed).
+6. Jalankan dev server:
    ```bash
    npm run dev
    ```
-5. Buka [http://localhost:3000](http://localhost:3000).
+7. Buka [http://localhost:3000](http://localhost:3000) → "Masuk sebagai Admin" → login pakai akun dari langkah 5.
 
 ## Struktur Project
 
 ```
-prisma/schema.prisma        # Model: Admin, Exam, Question, Choice, ExamSession, Answer, ViolationLog
-src/app/page.tsx             # Landing page (tombol Admin / Peserta)
-src/app/admin/               # Login admin, dashboard, buat ujian
-src/app/join/                 # Peserta masuk pakai kode ujian
-src/app/exam/[sessionId]/     # Halaman pengerjaan ujian (timer + anti-cheat)
-src/app/api/                  # Route handlers: exams, sessions, answers, violations, submit
+prisma/schema.prisma          # Model: Admin, Exam, Question, Choice, ExamSession, Answer, ViolationLog
+prisma/seed.ts                 # Buat akun admin awal (npm run db:seed)
+src/lib/auth.config.ts         # Konfigurasi NextAuth edge-safe (dipakai middleware)
+src/lib/auth.ts                # Konfigurasi NextAuth penuh (Credentials provider + Prisma)
+src/middleware.ts               # Proteksi rute /admin/*
+src/app/page.tsx                # Landing page (tombol Admin / Peserta)
+src/app/admin/                  # Login admin, dashboard, buat ujian
+src/app/join/                   # Peserta masuk pakai kode ujian
+src/app/exam/[sessionId]/       # Halaman pengerjaan ujian (timer + anti-cheat)
+src/app/api/                    # Route handlers: exams, sessions, answers, violations, submit, auth
 src/components/AntiCheatMonitor.tsx  # Deteksi tab switch / fullscreen exit
 src/components/ExamTimer.tsx         # Countdown berbasis deadline server
 ```
@@ -45,11 +60,12 @@ src/components/ExamTimer.tsx         # Countdown berbasis deadline server
 
 Sudah ada:
 - Skema database lengkap sesuai PRD §4
-- Landing page, join flow, exam-taking flow dengan timer & anti-cheat dasar
+- Landing page, join flow, exam-taking flow dengan timer & anti-cheat (toggle aktif/nonaktif + 3 mode aksi: peringatan/catat saja/akhiri otomatis)
+- Autentikasi admin (NextAuth Credentials) — `/admin/*` terlindungi middleware, ujian di-scope ke admin yang login
 - API untuk buat ujian, join sesi, autosave jawaban, lapor pelanggaran, submit
 
 Belum ada (lihat `PRD.md` §11 untuk keputusan yang diperlukan):
-- Autentikasi admin sungguhan (NextAuth/Clerk) — saat ini `admin/login` hanya UI, belum terhubung
+- Registrasi admin dari UI (saat ini hanya lewat `npm run db:seed`)
 - Manajemen soal (tambah/edit soal & kunci jawaban) dari UI admin
 - Auto-scoring & penilaian manual essay
 - Export hasil ke Excel/CSV/PDF

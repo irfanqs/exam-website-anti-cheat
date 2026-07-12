@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-// TODO: ganti dengan admin dari session auth setelah NextAuth/Clerk terpasang (PRD §6).
-async function getOrCreateDemoAdmin() {
-  return prisma.admin.upsert({
-    where: { email: "demo-admin@example.com" },
-    create: {
-      email: "demo-admin@example.com",
-      name: "Demo Admin",
-      passwordHash: "unset",
-    },
-    update: {},
-  });
-}
+import { auth } from "@/lib/auth";
 
 const VIOLATION_ACTIONS = ["WARN", "LOG_ONLY", "AUTO_SUBMIT"] as const;
 
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const {
     title,
     description,
@@ -35,7 +28,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid violationAction" }, { status: 400 });
   }
 
-  const admin = await getOrCreateDemoAdmin();
   const code = Math.random().toString(36).slice(2, 8).toUpperCase();
 
   const exam = await prisma.exam.create({
@@ -48,7 +40,7 @@ export async function POST(req: NextRequest) {
       violationAction: violationAction ?? "AUTO_SUBMIT",
       tabViolationTolerance: tabViolationTolerance ?? 0,
       requireFullscreen: requireFullscreen ?? false,
-      adminId: admin.id,
+      adminId: session.user.id,
       status: "DRAFT",
     },
   });

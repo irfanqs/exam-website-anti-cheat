@@ -1,10 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { SignOutButton } from "@/components/SignOutButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/admin/login");
+
   const exams = await prisma.exam.findMany({
+    where: { adminId: session.user.id },
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { sessions: true, questions: true } } },
   });
@@ -12,13 +19,19 @@ export default async function AdminDashboardPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Dashboard Ujian</h1>
-        <Link
-          href="/admin/exams/new"
-          className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background"
-        >
-          + Buat Ujian
-        </Link>
+        <div>
+          <h1 className="text-xl font-semibold">Dashboard Ujian</h1>
+          <p className="text-sm text-zinc-500">{session.user.email}</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/admin/exams/new"
+            className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background"
+          >
+            + Buat Ujian
+          </Link>
+          <SignOutButton />
+        </div>
       </div>
 
       {exams.length === 0 ? (
