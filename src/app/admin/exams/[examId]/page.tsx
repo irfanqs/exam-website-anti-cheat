@@ -17,10 +17,21 @@ export default async function ExamDetailPage({
 
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
-    include: { questions: { include: { choices: true }, orderBy: { order: "asc" } } },
+    include: {
+      questions: { include: { choices: true }, orderBy: { order: "asc" } },
+      sessions: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          _count: { select: { violations: true } },
+          answers: { select: { needsManualGrading: true } },
+        },
+      },
+    },
   });
 
   if (!exam || exam.adminId !== session.user.id) notFound();
+
+  const totalPoints = exam.questions.reduce((sum, q) => sum + q.points, 0);
 
   return (
     <ExamDetail
@@ -34,6 +45,15 @@ export default async function ExamDetailPage({
         type: q.type,
         points: q.points,
         choices: q.choices.map((c) => ({ id: c.id, text: c.text, isCorrect: c.isCorrect })),
+      }))}
+      participants={exam.sessions.map((s) => ({
+        id: s.id,
+        participantName: s.participantName,
+        status: s.status,
+        violationCount: s._count.violations,
+        totalScore: s.totalScore,
+        totalPoints,
+        pendingGrading: s.answers.filter((a) => a.needsManualGrading).length,
       }))}
     />
   );

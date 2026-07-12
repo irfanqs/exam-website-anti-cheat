@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { scoreSession } from "@/lib/scoring";
 
 const VIOLATION_TYPES = ["TAB_HIDDEN", "WINDOW_BLUR", "EXIT_FULLSCREEN"] as const;
 
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
       where: { id: sessionId },
       data: { status: "AUTO_SUBMITTED_VIOLATION", submittedAt: new Date() },
     });
+    await scoreSession(sessionId);
   }
 
   return NextResponse.json({ violationCount, tolerance, action, limitReached });

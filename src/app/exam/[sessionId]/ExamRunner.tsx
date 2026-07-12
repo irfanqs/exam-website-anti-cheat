@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExamTimer } from "@/components/ExamTimer";
 import { AntiCheatMonitor } from "@/components/AntiCheatMonitor";
@@ -92,8 +93,11 @@ export function ExamRunner({
 
   if (submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="text-lg">Ujian selesai. Jawaban Anda sudah terkirim.</p>
+        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
+          ← Kembali ke Beranda
+        </Link>
       </div>
     );
   }

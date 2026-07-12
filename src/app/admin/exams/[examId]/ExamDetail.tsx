@@ -14,12 +14,29 @@ type Question = {
   choices: { id: string; text: string; isCorrect: boolean }[];
 };
 
+type SessionStatus =
+  | "IN_PROGRESS"
+  | "SUBMITTED"
+  | "AUTO_SUBMITTED_TIMEOUT"
+  | "AUTO_SUBMITTED_VIOLATION";
+
+type Participant = {
+  id: string;
+  participantName: string;
+  status: SessionStatus;
+  violationCount: number;
+  totalScore: number | null;
+  totalPoints: number;
+  pendingGrading: number;
+};
+
 type Props = {
   examId: string;
   title: string;
   code: string;
   status: "DRAFT" | "PUBLISHED" | "CLOSED";
   questions: Question[];
+  participants: Participant[];
 };
 
 const TYPE_LABELS: Record<QuestionType, string> = {
@@ -29,7 +46,14 @@ const TYPE_LABELS: Record<QuestionType, string> = {
   ESSAY: "Essay",
 };
 
-export function ExamDetail({ examId, title, code, status, questions }: Props) {
+const SESSION_STATUS_LABELS: Record<SessionStatus, string> = {
+  IN_PROGRESS: "Sedang mengerjakan",
+  SUBMITTED: "Selesai",
+  AUTO_SUBMITTED_TIMEOUT: "Waktu habis",
+  AUTO_SUBMITTED_VIOLATION: "Terindikasi curang",
+};
+
+export function ExamDetail({ examId, title, code, status, questions, participants }: Props) {
   const router = useRouter();
   const [type, setType] = useState<QuestionType>("SINGLE_CHOICE");
   const [choices, setChoices] = useState(["", ""]);
@@ -37,15 +61,8 @@ export function ExamDetail({ examId, title, code, status, questions }: Props) {
   const [correctChoiceIndexes, setCorrectChoiceIndexes] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const isChoiceType = type === "SINGLE_CHOICE" || type === "MULTIPLE_CHOICE";
-
-  async function handleCopyCode() {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
 
   async function handleAddQuestion(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -124,16 +141,8 @@ export function ExamDetail({ examId, title, code, status, questions }: Props) {
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">{title}</h1>
-          <p className="flex items-center gap-2 text-sm text-zinc-500">
-            <span>
-              Kode: {code} · Status: {status}
-            </span>
-            <button
-              onClick={handleCopyCode}
-              className="rounded border border-black/[.08] px-2 py-0.5 text-xs hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.05]"
-            >
-              {copied ? "Tersalin!" : "Salin Kode"}
-            </button>
+          <p className="text-sm text-zinc-500">
+            Kode: {code} · Status: {status}
           </p>
         </div>
         {status === "DRAFT" && (
@@ -186,6 +195,36 @@ export function ExamDetail({ examId, title, code, status, questions }: Props) {
                 </ul>
               )}
             </div>
+          ))
+        )}
+      </div>
+
+      <div className="mb-8 space-y-3">
+        <h2 className="text-sm font-medium text-zinc-500">
+          Daftar Peserta ({participants.length})
+        </h2>
+
+        {participants.length === 0 ? (
+          <p className="text-sm text-zinc-500">Belum ada peserta yang mengerjakan.</p>
+        ) : (
+          participants.map((p) => (
+            <Link
+              key={p.id}
+              href={`/admin/exams/${examId}/sessions/${p.id}`}
+              className="flex items-center justify-between rounded-xl border border-black/[.08] p-4 hover:bg-black/[.02] dark:border-white/[.145] dark:hover:bg-white/[.03]"
+            >
+              <div>
+                <p className="font-medium">{p.participantName}</p>
+                <p className="text-sm text-zinc-500">
+                  {SESSION_STATUS_LABELS[p.status]}
+                  {p.violationCount > 0 && ` · ${p.violationCount} pelanggaran`}
+                  {p.pendingGrading > 0 && ` · ${p.pendingGrading} soal essay perlu dinilai`}
+                </p>
+              </div>
+              <p className="shrink-0 text-sm font-medium">
+                {p.totalScore ?? 0} / {p.totalPoints}
+              </p>
+            </Link>
           ))
         )}
       </div>

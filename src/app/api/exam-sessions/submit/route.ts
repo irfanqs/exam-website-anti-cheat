@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { scoreSession } from "@/lib/scoring";
 
 const STATUS_BY_REASON = {
   manual: "SUBMITTED",
@@ -27,6 +28,8 @@ export async function POST(req: NextRequest) {
       submittedAt: new Date(),
     },
   });
+
+  await scoreSession(sessionId);
 
   return NextResponse.json({ ok: true });
 }

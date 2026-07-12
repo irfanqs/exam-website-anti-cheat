@@ -1,6 +1,15 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ExamRunner } from "./ExamRunner";
+
+const STATUS_MESSAGES: Record<string, string> = {
+  SUBMITTED: "Ujian sudah selesai dikerjakan. Jawaban Anda sudah tersimpan.",
+  AUTO_SUBMITTED_TIMEOUT:
+    "Waktu pengerjaan habis. Jawaban yang sudah terisi otomatis tersimpan.",
+  AUTO_SUBMITTED_VIOLATION:
+    "Ujian dihentikan otomatis karena terdeteksi pelanggaran (berpindah tab/aplikasi lain).",
+};
 
 export default async function ExamPage({
   params,
@@ -18,10 +27,13 @@ export default async function ExamPage({
 
   if (session.status !== "IN_PROGRESS") {
     return (
-      <div className="flex min-h-screen items-center justify-center px-6 text-center">
-        <p className="text-lg">
-          Ujian ini sudah selesai dikerjakan (status: {session.status}).
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="max-w-md text-lg">
+          {STATUS_MESSAGES[session.status] ?? "Ujian ini sudah selesai dikerjakan."}
         </p>
+        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
+          ← Kembali ke Beranda
+        </Link>
       </div>
     );
   }
