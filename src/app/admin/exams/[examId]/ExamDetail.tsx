@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -106,6 +107,13 @@ export function ExamDetail({ examId, title, code, status, questions }: Props) {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
+      <Link
+        href="/admin"
+        className="mb-4 inline-block text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+      >
+        ← Kembali ke Dashboard
+      </Link>
+
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">{title}</h1>
