@@ -10,6 +10,7 @@ type ViolationResult = {
   tolerance: number;
   action: ViolationAction;
   limitReached: boolean;
+  type: ViolationType;
 };
 
 type Props = {

@@ -45,7 +45,7 @@ export function SessionGrading({
     <div className="mx-auto max-w-2xl px-6 py-10">
       <Link
         href={`/admin/exams/${examId}`}
-        className="mb-4 inline-block text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+        className="mb-4 inline-block text-sm text-zinc-500 hover:text-zinc-800"
       >
         ← Kembali ke Ujian
       </Link>
@@ -114,7 +114,7 @@ function QuestionAnswer({
   }
 
   return (
-    <div className="rounded-xl border border-black/[.08] p-4 dark:border-white/[.145]">
+    <div className="rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur">
       <div className="flex items-start justify-between gap-4">
         <p className="font-medium">
           {index + 1}. {question.text}
@@ -160,7 +160,7 @@ function QuestionAnswer({
 
       {question.type === "ESSAY" && (
         <div className="mt-2 space-y-2 text-sm">
-          <p className="whitespace-pre-wrap rounded-lg bg-black/[.03] p-3 dark:bg-white/[.05]">
+          <p className="whitespace-pre-wrap rounded-lg bg-zinc-50 p-3">
             {answer?.textAnswer || "(kosong)"}
           </p>
           <div className="flex items-center gap-2">
@@ -170,12 +170,12 @@ function QuestionAnswer({
               max={question.points}
               value={score}
               onChange={(e) => setScore(e.target.value)}
-              className="w-24 rounded-lg border border-black/[.08] px-2 py-1 text-sm dark:border-white/[.145] dark:bg-zinc-900"
+              className="w-24 rounded-lg border border-black/[.08] bg-white px-2 py-1 text-sm"
             />
             <button
               onClick={handleSaveScore}
               disabled={saving || !answer}
-              className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background disabled:opacity-50"
+              className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-blue-200 disabled:opacity-50"
             >
               {saving ? "Menyimpan..." : "Simpan Nilai"}
             </button>

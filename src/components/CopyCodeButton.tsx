@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const DEFAULT_CLASSES =
-  "rounded border border-black/[.08] px-2 py-0.5 text-xs hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.05]";
+  "rounded border border-black/[.08] bg-white px-2 py-0.5 text-xs hover:bg-zinc-50";
 
 export function CopyCodeButton({ code, className }: { code: string; className?: string }) {
   const [copied, setCopied] = useState(false);

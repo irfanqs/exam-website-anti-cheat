@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExamTimer } from "@/components/ExamTimer";
 import { AntiCheatMonitor } from "@/components/AntiCheatMonitor";
+import { VIOLATION_REASON } from "@/lib/violation-labels";
 
 type Question = {
   id: string;
@@ -12,6 +13,8 @@ type Question = {
   type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "SHORT_ANSWER" | "ESSAY";
   choices: { id: string; text: string }[];
 };
+
+type ViolationType = "TAB_HIDDEN" | "WINDOW_BLUR" | "EXIT_FULLSCREEN";
 
 type Props = {
   sessionId: string;
@@ -32,6 +35,7 @@ export function ExamRunner({
 }: Props) {
   const router = useRouter();
   const [submitted, setSubmitted] = useState(false);
+  const [endMessage, setEndMessage] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const submitting = useRef(false);
 
@@ -60,10 +64,16 @@ export function ExamRunner({
     tolerance: number;
     action: "WARN" | "LOG_ONLY" | "AUTO_SUBMIT";
     limitReached: boolean;
+    type: ViolationType;
   }) {
+    const reason = VIOLATION_REASON[result.type];
+
     if (result.action === "AUTO_SUBMIT" && result.limitReached) {
       // Server sudah menandai sesi sebagai auto-submitted, tinggal
       // tampilkan status akhir di client.
+      setEndMessage(
+        `Ujian dihentikan otomatis karena Anda terdeteksi ${reason}.`
+      );
       setSubmitted(true);
       router.refresh();
       return;
@@ -71,7 +81,7 @@ export function ExamRunner({
 
     if (result.action === "WARN") {
       setWarning(
-        `Peringatan: Anda terdeteksi keluar dari halaman ujian (${result.violationCount}/${result.tolerance + 1}). ` +
+        `Peringatan: Anda terdeteksi ${reason} (${result.violationCount}/${result.tolerance + 1}). ` +
           (result.violationCount > result.tolerance
             ? "Batas pelanggaran sudah tercapai."
             : "Pelanggaran berikutnya dapat berakibat pada ujian Anda.")
@@ -94,8 +104,10 @@ export function ExamRunner({
   if (submitted) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg">Ujian selesai. Jawaban Anda sudah terkirim.</p>
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
+        <p className="text-lg">
+          {endMessage ?? "Ujian selesai. Jawaban Anda sudah terkirim."}
+        </p>
+        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
           ← Kembali ke Beranda
         </Link>
       </div>
@@ -117,14 +129,25 @@ export function ExamRunner({
       </div>
 
       {warning && (
-        <div className="mb-6 rounded-lg border border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-          {warning}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
+          <div className="w-full max-w-sm space-y-4 rounded-xl border border-amber-400 bg-white p-6 text-center shadow-xl">
+            <p className="text-lg font-semibold text-amber-600">
+              ⚠ Peringatan Anti Cheat
+            </p>
+            <p className="text-sm text-zinc-700">{warning}</p>
+            <button
+              onClick={() => setWarning(null)}
+              className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200"
+            >
+              Saya Mengerti
+            </button>
+          </div>
         </div>
       )}
 
       <div className="space-y-8">
         {questions.map((q, i) => (
-          <div key={q.id} className="rounded-xl border border-black/[.08] p-5 dark:border-white/[.145]">
+          <div key={q.id} className="rounded-xl border border-black/[.08] bg-white/70 p-5 shadow-sm backdrop-blur">
             <p className="mb-3 font-medium">
               {i + 1}. {q.text}
             </p>
@@ -147,7 +170,7 @@ export function ExamRunner({
 
             {(q.type === "SHORT_ANSWER" || q.type === "ESSAY") && (
               <textarea
-                className="w-full rounded-lg border border-black/[.08] px-3 py-2 dark:border-white/[.145] dark:bg-zinc-900"
+                className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
                 rows={q.type === "ESSAY" ? 6 : 2}
                 onBlur={(e) => saveAnswer(q.id, { textAnswer: e.target.value })}
               />
@@ -158,7 +181,7 @@ export function ExamRunner({
 
       <button
         onClick={() => submitExam("manual")}
-        className="mt-8 w-full rounded-lg bg-foreground px-4 py-3 font-medium text-background"
+        className="mt-8 w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-medium text-white shadow-md shadow-blue-200 transition-transform hover:scale-[1.01]"
       >
         Submit Ujian
       </button>

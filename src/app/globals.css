@@ -1,7 +1,12 @@
 @import "tailwindcss";
 
+/* Paksa tema terang di seluruh aplikasi — .dark tidak pernah dipasang
+   ke elemen manapun, sehingga semua utility dark: tidak pernah aktif
+   meski OS/browser pengguna dalam mode gelap. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
+  --background: #eef2ff;
   --foreground: #171717;
 }
 
@@ -12,15 +17,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 45%, #f5f3ff 100%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }

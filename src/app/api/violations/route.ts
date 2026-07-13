@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       tolerance: session.exam.tabViolationTolerance,
       action: "LOG_ONLY",
       limitReached: false,
+      type,
     });
   }
 
@@ -49,5 +50,5 @@ export async function POST(req: NextRequest) {
     await scoreSession(sessionId);
   }
 
-  return NextResponse.json({ violationCount, tolerance, action, limitReached });
+  return NextResponse.json({ violationCount, tolerance, action, limitReached, type });
 }

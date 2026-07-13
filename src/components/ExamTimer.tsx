@@ -34,7 +34,7 @@ export function ExamTimer({ deadline, onTimeUp }: Props) {
   const seconds = String(totalSeconds % 60).padStart(2, "0");
 
   return (
-    <div className="rounded-lg bg-black px-4 py-2 font-mono text-lg tabular-nums text-white dark:bg-white dark:text-black">
+    <div className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-mono text-lg tabular-nums text-white shadow-sm shadow-blue-200">
       {minutes}:{seconds}
     </div>
   );

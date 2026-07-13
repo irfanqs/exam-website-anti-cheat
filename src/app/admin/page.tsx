@@ -14,7 +14,10 @@ export default async function AdminDashboardPage() {
   const exams = await prisma.exam.findMany({
     where: { adminId: session.user.id },
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { sessions: true, questions: true } } },
+    include: {
+      _count: { select: { sessions: true, questions: true } },
+      sessions: { select: { status: true, _count: { select: { violations: true } } } },
+    },
   });
 
   return (
@@ -27,7 +30,7 @@ export default async function AdminDashboardPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/admin/exams/new"
-            className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background"
+            className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.02]"
           >
             + Buat Ujian
           </Link>
@@ -39,10 +42,18 @@ export default async function AdminDashboardPage() {
         <p className="text-zinc-500">Belum ada ujian. Buat ujian pertama Anda.</p>
       ) : (
         <div className="space-y-3">
-          {exams.map((exam) => (
+          {exams.map((exam) => {
+            const flaggedCount = exam.sessions.filter(
+              (s) => s.status === "AUTO_SUBMITTED_VIOLATION"
+            ).length;
+            const violatedCount = exam.sessions.filter(
+              (s) => s._count.violations > 0
+            ).length;
+
+            return (
             <div
               key={exam.id}
-              className="flex flex-col gap-3 rounded-xl border border-black/[.08] p-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/[.145]"
+              className="flex flex-col gap-3 rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
                 <p className="font-medium">{exam.title}</p>
@@ -50,21 +61,29 @@ export default async function AdminDashboardPage() {
                   Kode: {exam.code} · {exam._count.questions} soal ·{" "}
                   {exam._count.sessions} peserta · {exam.status}
                 </p>
+                {violatedCount > 0 && (
+                  <p className="mt-1 text-sm text-amber-600">
+                    ⚠ {violatedCount} peserta terdeteksi berpindah tab
+                    {flaggedCount > 0 &&
+                      ` · ${flaggedCount} di antaranya dihentikan otomatis karena melebihi batas pelanggaran`}
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <CopyCodeButton
                   code={exam.code}
-                  className="rounded-lg border border-black/[.08] px-3 py-1.5 text-sm font-medium hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.05]"
+                  className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
                 />
                 <Link
                   href={`/admin/exams/${exam.id}`}
-                  className="rounded-lg bg-foreground px-3 py-1.5 text-sm font-medium text-background"
+                  className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.02]"
                 >
                   Lihat Detail
                 </Link>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

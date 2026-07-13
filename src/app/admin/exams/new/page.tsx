@@ -43,7 +43,7 @@ export default function NewExamPage() {
           <input
             name="title"
             required
-            className="w-full rounded-lg border border-black/[.08] px-3 py-2 dark:border-white/[.145] dark:bg-zinc-900"
+            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
           />
         </div>
 
@@ -51,7 +51,7 @@ export default function NewExamPage() {
           <label className="text-sm font-medium">Deskripsi</label>
           <textarea
             name="description"
-            className="w-full rounded-lg border border-black/[.08] px-3 py-2 dark:border-white/[.145] dark:bg-zinc-900"
+            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
           />
         </div>
 
@@ -63,11 +63,11 @@ export default function NewExamPage() {
             min={1}
             required
             defaultValue={60}
-            className="w-full rounded-lg border border-black/[.08] px-3 py-2 dark:border-white/[.145] dark:bg-zinc-900"
+            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
           />
         </div>
 
-        <div className="space-y-3 rounded-xl border border-black/[.08] p-4 dark:border-white/[.145]">
+        <div className="space-y-3 rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur">
           <label className="flex items-center justify-between text-sm font-medium">
             Anti Cheat
             <input
@@ -88,7 +88,7 @@ export default function NewExamPage() {
                 <select
                   name="violationAction"
                   defaultValue="AUTO_SUBMIT"
-                  className="w-full rounded-lg border border-black/[.08] px-3 py-2 text-sm dark:border-white/[.145] dark:bg-zinc-900"
+                  className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
                 >
                   <option value="WARN">Beri peringatan ke peserta</option>
                   <option value="LOG_ONLY">Catat pelanggaran saja (diam-diam)</option>
@@ -106,7 +106,7 @@ export default function NewExamPage() {
                   min={0}
                   required
                   defaultValue={0}
-                  className="w-full rounded-lg border border-black/[.08] px-3 py-2 text-sm dark:border-white/[.145] dark:bg-zinc-900"
+                  className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
                 />
               </div>
 
@@ -126,7 +126,7 @@ export default function NewExamPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-foreground px-4 py-2 font-medium text-background disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-50"
         >
           {loading ? "Menyimpan..." : "Simpan Ujian"}
         </button>

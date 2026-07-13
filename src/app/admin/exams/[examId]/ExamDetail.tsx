@@ -123,7 +123,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
     <div className="mx-auto max-w-2xl px-6 py-10">
       <Link
         href="/admin"
-        className="mb-4 inline-block text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+        className="mb-4 inline-block text-sm text-zinc-500 hover:text-zinc-800"
       >
         ← Kembali ke Dashboard
       </Link>
@@ -138,7 +138,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
         {status === "DRAFT" && (
           <button
             onClick={handlePublish}
-            className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background"
+            className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.02]"
           >
             Publish Ujian
           </button>
@@ -146,7 +146,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
         {status === "PUBLISHED" && participants.length === 0 && (
           <button
             onClick={handleUnpublish}
-            className="rounded-lg border border-black/[.08] px-4 py-2 text-sm font-medium hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.05]"
+            className="rounded-lg border border-black/[.08] bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
           >
             Unpublish (kembalikan ke Draft)
           </button>
@@ -175,7 +175,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
             ) : (
               <div
                 key={q.id}
-                className="rounded-xl border border-black/[.08] p-4 dark:border-white/[.145]"
+                className="rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur"
               >
                 <div className="flex items-start justify-between gap-4">
                   <p className="font-medium">
@@ -229,7 +229,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
             <Link
               key={p.id}
               href={`/admin/exams/${examId}/sessions/${p.id}`}
-              className="flex items-center justify-between rounded-xl border border-black/[.08] p-4 hover:bg-black/[.02] dark:border-white/[.145] dark:hover:bg-white/[.03]"
+              className="flex items-center justify-between rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur transition-colors hover:bg-white"
             >
               <div>
                 <p className="font-medium">{p.participantName}</p>
@@ -328,7 +328,7 @@ function QuestionForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-xl border border-black/[.08] p-5 dark:border-white/[.145]"
+      className="space-y-4 rounded-xl border border-black/[.08] bg-white/80 p-5 shadow-sm backdrop-blur"
     >
       <h2 className="font-medium">{initial ? "Edit Soal" : "Tambah Soal"}</h2>
 
@@ -337,7 +337,7 @@ function QuestionForm({
         <select
           value={type}
           onChange={(e) => setType(e.target.value as QuestionType)}
-          className="w-full rounded-lg border border-black/[.08] px-3 py-2 text-sm dark:border-white/[.145] dark:bg-zinc-900"
+          className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
         >
           <option value="SINGLE_CHOICE">Pilihan Ganda (1 jawaban)</option>
           <option value="MULTIPLE_CHOICE">Pilihan Ganda (multi jawaban)</option>
@@ -352,7 +352,7 @@ function QuestionForm({
           name="text"
           required
           defaultValue={initial?.text}
-          className="w-full rounded-lg border border-black/[.08] px-3 py-2 text-sm dark:border-white/[.145] dark:bg-zinc-900"
+          className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
         />
       </div>
 
@@ -364,7 +364,7 @@ function QuestionForm({
           min={1}
           required
           defaultValue={initial?.points ?? 10}
-          className="w-full rounded-lg border border-black/[.08] px-3 py-2 text-sm dark:border-white/[.145] dark:bg-zinc-900"
+          className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
         />
       </div>
 
@@ -399,7 +399,7 @@ function QuestionForm({
                   setChoices(next);
                 }}
                 placeholder={`Opsi ${i + 1}`}
-                className="flex-1 rounded-lg border border-black/[.08] px-3 py-2 text-sm dark:border-white/[.145] dark:bg-zinc-900"
+                className="flex-1 rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
               />
               {choices.length > 2 && (
                 <button
@@ -429,7 +429,7 @@ function QuestionForm({
             name="correctTextAnswer"
             required
             defaultValue={initial?.correctTextAnswer ?? ""}
-            className="w-full rounded-lg border border-black/[.08] px-3 py-2 text-sm dark:border-white/[.145] dark:bg-zinc-900"
+            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
           />
         </div>
       )}
@@ -447,7 +447,7 @@ function QuestionForm({
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
+          className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-50"
         >
           {saving ? "Menyimpan..." : submitLabel}
         </button>
@@ -455,7 +455,7 @@ function QuestionForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-black/[.08] px-4 py-2 text-sm font-medium hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.05]"
+            className="rounded-lg border border-black/[.08] bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
           >
             Batal
           </button>

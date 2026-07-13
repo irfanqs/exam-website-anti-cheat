@@ -1,6 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -33,10 +34,16 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 dark:bg-black">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6">
+      <div className="mb-4 w-full max-w-sm">
+        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
+          ← Kembali ke Beranda
+        </Link>
+      </div>
+
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-5 rounded-xl border border-black/[.08] p-8 dark:border-white/[.145]"
+        className="w-full max-w-sm space-y-5 rounded-xl border border-black/[.08] bg-white/80 p-8 shadow-lg shadow-blue-100/50 backdrop-blur"
       >
         <h1 className="text-xl font-semibold">Login Admin</h1>
 
@@ -46,7 +53,7 @@ export default function AdminLoginPage() {
             name="email"
             type="email"
             required
-            className="w-full rounded-lg border border-black/[.08] px-3 py-2 dark:border-white/[.145] dark:bg-zinc-900"
+            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
           />
         </div>
 
@@ -56,7 +63,7 @@ export default function AdminLoginPage() {
             name="password"
             type="password"
             required
-            className="w-full rounded-lg border border-black/[.08] px-3 py-2 dark:border-white/[.145] dark:bg-zinc-900"
+            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
           />
         </div>
 
@@ -65,14 +72,14 @@ export default function AdminLoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-foreground px-4 py-2 font-medium text-background disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-medium text-white shadow-md shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-50"
         >
           {loading ? "Memproses..." : "Masuk"}
         </button>
 
         <p className="text-center text-xs text-zinc-500">
           Belum punya akun admin? Jalankan{" "}
-          <code className="rounded bg-black/5 px-1 dark:bg-white/10">npm run db:seed</code>{" "}
+          <code className="rounded bg-black/5 px-1">npm run db:seed</code>{" "}
           untuk membuat akun awal (lihat README).
         </p>
       </form>

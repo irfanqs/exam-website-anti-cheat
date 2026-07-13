@@ -2,13 +2,13 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 font-sans dark:bg-black">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 font-sans">
       <main className="flex w-full max-w-lg flex-col items-center gap-10 text-center">
         <div className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-zinc-50">
+          <h1 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
             Ujian Online Anti-Cheat
           </h1>
-          <p className="text-base leading-7 text-zinc-600 dark:text-zinc-400">
+          <p className="text-base leading-7 text-zinc-600">
             Buat dan kerjakan ujian dengan waktu otomatis, penilaian per soal,
             dan deteksi kecurangan saat peserta berpindah tab.
           </p>
@@ -17,13 +17,13 @@ export default function Home() {
         <div className="flex w-full flex-col gap-4 sm:flex-row">
           <Link
             href="/admin/login"
-            className="flex h-14 flex-1 items-center justify-center rounded-xl bg-foreground px-5 text-base font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+            className="flex h-14 flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-5 text-base font-medium text-white shadow-md shadow-blue-200 transition-transform hover:scale-[1.02] hover:shadow-lg"
           >
             Masuk sebagai Admin
           </Link>
           <Link
             href="/join"
-            className="flex h-14 flex-1 items-center justify-center rounded-xl border border-solid border-black/[.08] px-5 text-base font-medium transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
+            className="flex h-14 flex-1 items-center justify-center rounded-xl border border-black/[.08] bg-white/70 px-5 text-base font-medium shadow-sm backdrop-blur transition-colors hover:bg-white"
           >
             Masuk sebagai Peserta
           </Link>

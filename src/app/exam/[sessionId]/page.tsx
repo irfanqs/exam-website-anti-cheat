@@ -2,13 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ExamRunner } from "./ExamRunner";
+import { VIOLATION_REASON } from "@/lib/violation-labels";
 
 const STATUS_MESSAGES: Record<string, string> = {
   SUBMITTED: "Ujian sudah selesai dikerjakan. Jawaban Anda sudah tersimpan.",
   AUTO_SUBMITTED_TIMEOUT:
     "Waktu pengerjaan habis. Jawaban yang sudah terisi otomatis tersimpan.",
-  AUTO_SUBMITTED_VIOLATION:
-    "Ujian dihentikan otomatis karena terdeteksi pelanggaran (berpindah tab/aplikasi lain).",
 };
 
 export default async function ExamPage({
@@ -26,12 +25,21 @@ export default async function ExamPage({
   if (!session) notFound();
 
   if (session.status !== "IN_PROGRESS") {
+    let message = STATUS_MESSAGES[session.status] ?? "Ujian ini sudah selesai dikerjakan.";
+
+    if (session.status === "AUTO_SUBMITTED_VIOLATION") {
+      const lastViolation = await prisma.violationLog.findFirst({
+        where: { sessionId: session.id },
+        orderBy: { occurredAt: "desc" },
+      });
+      const reason = lastViolation ? VIOLATION_REASON[lastViolation.type] : "terdeteksi pelanggaran";
+      message = `Ujian dihentikan otomatis karena Anda terdeteksi ${reason}.`;
+    }
+
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="max-w-md text-lg">
-          {STATUS_MESSAGES[session.status] ?? "Ujian ini sudah selesai dikerjakan."}
-        </p>
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
+        <p className="max-w-md text-lg">{message}</p>
+        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
           ← Kembali ke Beranda
         </Link>
       </div>
