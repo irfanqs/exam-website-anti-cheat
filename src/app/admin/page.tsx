@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
+import { DeleteExamButton } from "@/components/DeleteExamButton";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,7 @@ export default async function AdminDashboardPage() {
                 >
                   Lihat Detail
                 </Link>
+                <DeleteExamButton examId={exam.id} title={exam.title} />
               </div>
             </div>
             );
