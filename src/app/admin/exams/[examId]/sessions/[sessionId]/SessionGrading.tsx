@@ -91,6 +91,25 @@ function QuestionAnswer({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isUnanswered =
+    question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE"
+      ? !answer || answer.choiceIds.length === 0
+      : !answer || !answer.textAnswer?.trim();
+
+  let statusBadge: { label: string; className: string } | null = null;
+  if (isUnanswered) {
+    statusBadge = { label: "Tidak Dijawab", className: "bg-zinc-100 text-zinc-600" };
+  } else if (question.type === "ESSAY") {
+    statusBadge = answer?.needsManualGrading
+      ? { label: "Menunggu Penilaian", className: "bg-amber-100 text-amber-700" }
+      : { label: "Sudah Dinilai", className: "bg-emerald-100 text-emerald-700" };
+  } else {
+    statusBadge =
+      answer?.score === question.points
+        ? { label: "Benar", className: "bg-emerald-100 text-emerald-700" }
+        : { label: "Salah", className: "bg-red-100 text-red-700" };
+  }
+
   async function handleSaveScore() {
     if (!answer) return;
     setError(null);
@@ -119,9 +138,18 @@ function QuestionAnswer({
         <p className="font-medium">
           {index + 1}. {question.text}
         </p>
-        <p className="shrink-0 text-sm text-zinc-500">
-          {answer?.score ?? 0} / {question.points} poin
-        </p>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <p className="text-sm text-zinc-500">
+            {answer?.score ?? 0} / {question.points} poin
+          </p>
+          {statusBadge && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge.className}`}
+            >
+              {statusBadge.label}
+            </span>
+          )}
+        </div>
       </div>
 
       {(question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE") && (
@@ -145,6 +173,9 @@ function QuestionAnswer({
               </li>
             );
           })}
+          {isUnanswered && (
+            <li className="italic text-zinc-500">Peserta tidak memilih opsi apa pun.</li>
+          )}
         </ul>
       )}
 
@@ -152,7 +183,9 @@ function QuestionAnswer({
         <div className="mt-2 space-y-1 text-sm">
           <p>
             Jawaban peserta:{" "}
-            <span className="font-medium">{answer?.textAnswer || "(kosong)"}</span>
+            <span className="font-medium">
+              {answer?.textAnswer?.trim() || "Tidak dijawab"}
+            </span>
           </p>
           <p className="text-zinc-500">Kunci jawaban: {question.correctTextAnswer}</p>
         </div>
@@ -161,7 +194,7 @@ function QuestionAnswer({
       {question.type === "ESSAY" && (
         <div className="mt-2 space-y-2 text-sm">
           <p className="whitespace-pre-wrap rounded-lg bg-zinc-50 p-3">
-            {answer?.textAnswer || "(kosong)"}
+            {answer?.textAnswer?.trim() || "Tidak dijawab"}
           </p>
           <div className="flex items-center gap-2">
             <input

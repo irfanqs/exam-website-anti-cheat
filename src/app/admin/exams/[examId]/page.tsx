@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { VIOLATION_REASON } from "@/lib/violation-labels";
 import { ExamDetail } from "./ExamDetail";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export default async function ExamDetailPage({
       sessions: {
         orderBy: { createdAt: "desc" },
         include: {
-          _count: { select: { violations: true } },
+          violations: { select: { type: true } },
           answers: { select: { needsManualGrading: true } },
         },
       },
@@ -47,15 +48,27 @@ export default async function ExamDetailPage({
         correctTextAnswer: q.correctTextAnswer,
         choices: q.choices.map((c) => ({ id: c.id, text: c.text, isCorrect: c.isCorrect })),
       }))}
-      participants={exam.sessions.map((s) => ({
-        id: s.id,
-        participantName: s.participantName,
-        status: s.status,
-        violationCount: s._count.violations,
-        totalScore: s.totalScore,
-        totalPoints,
-        pendingGrading: s.answers.filter((a) => a.needsManualGrading).length,
-      }))}
+      participants={exam.sessions.map((s) => {
+        const violationCounts = s.violations.reduce<Record<string, number>>((acc, v) => {
+          acc[v.type] = (acc[v.type] ?? 0) + 1;
+          return acc;
+        }, {});
+
+        const violationSummary = Object.entries(violationCounts)
+          .map(([type, count]) => `${count}x ${VIOLATION_REASON[type as keyof typeof VIOLATION_REASON]}`)
+          .join(", ");
+
+        return {
+          id: s.id,
+          participantName: s.participantName,
+          status: s.status,
+          violationCount: s.violations.length,
+          violationSummary,
+          totalScore: s.totalScore,
+          totalPoints,
+          pendingGrading: s.answers.filter((a) => a.needsManualGrading).length,
+        };
+      })}
     />
   );
 }

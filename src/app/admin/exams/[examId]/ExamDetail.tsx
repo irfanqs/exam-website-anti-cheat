@@ -26,6 +26,7 @@ type Participant = {
   participantName: string;
   status: SessionStatus;
   violationCount: number;
+  violationSummary: string;
   totalScore: number | null;
   totalPoints: number;
   pendingGrading: number;
@@ -235,9 +236,13 @@ export function ExamDetail({ examId, title, code, status, questions, participant
                 <p className="font-medium">{p.participantName}</p>
                 <p className="text-sm text-zinc-500">
                   {SESSION_STATUS_LABELS[p.status]}
-                  {p.violationCount > 0 && ` · ${p.violationCount} pelanggaran`}
                   {p.pendingGrading > 0 && ` · ${p.pendingGrading} soal essay perlu dinilai`}
                 </p>
+                {p.violationCount > 0 && (
+                  <p className="mt-1 text-sm text-amber-600">
+                    ⚠ {p.violationCount} pelanggaran terdeteksi: {p.violationSummary}
+                  </p>
+                )}
               </div>
               <p className="shrink-0 text-sm font-medium">
                 {p.totalScore ?? 0} / {p.totalPoints}
