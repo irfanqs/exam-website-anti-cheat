@@ -39,6 +39,22 @@ Platform ujian online mirip Google Forms dengan tambahan: penilaian per soal, ti
    ```
 7. Buka [http://localhost:3000](http://localhost:3000) → "Masuk sebagai Admin" → login pakai akun dari langkah 5.
 
+## Deploy ke Vercel (dengan Supabase)
+
+Vercel jalan mulus dengan PostgreSQL — tidak perlu database lain. Supabase juga PostgreSQL, jadi tinggal disambungkan.
+
+1. Di Supabase: **Project Settings → Database → Connection string**, ambil dua URL:
+   - **Transaction pooler** (port `6543`) → jadi `DATABASE_URL`. Wajib pakai yang ini di Vercel, bukan direct connection — tiap serverless function invocation buka koneksi baru, dan Postgres biasa punya limit koneksi yang kecil (Supabase free tier ~60), jadi harus lewat pooler (PgBouncer) supaya tidak cepat habis.
+   - **Direct connection** (port `5432`) → jadi `DIRECT_URL`. Hanya dipakai untuk migrasi (`prisma migrate deploy`/`db push`), karena DDL (CREATE TABLE, dst) tidak didukung lewat transaction pooler.
+2. Di Vercel Project Settings → Environment Variables, isi: `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET` (generate baru khusus production, jangan pakai yang dev), dan opsional `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD`.
+3. Sebelum deploy pertama kali, jalankan migrasi dari lokal (pointing ke Supabase, pakai `DIRECT_URL`):
+   ```bash
+   npx prisma migrate deploy
+   ```
+   (Kalau belum ada migration history karena sebelumnya pakai `db push`, jalankan `npx prisma migrate dev --name init` sekali dari lokal dulu untuk membuat file migrasi awal, baru commit foldernya.)
+4. Deploy seperti biasa (`vercel` CLI atau hubungkan repo GitHub ke Vercel dashboard). `postinstall` script (`prisma generate`) otomatis jalan setiap build, jadi Prisma Client selalu fresh.
+5. Buat akun admin production: jalankan `npm run db:seed` dari lokal dengan `.env` yang menunjuk ke Supabase (bukan `prisma dev` lokal), atau jalankan lewat `vercel env pull` + `db:seed`.
+
 ## Struktur Project
 
 ```
