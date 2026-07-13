@@ -59,7 +59,7 @@ export async function GET(
   });
 
   return xlsxResponse(
-    `jawaban-${examSession.participantName.replace(/\s+/g, "-")}.xlsx`,
+    `jawaban-${examSession.participantName.replace(/\s+/g, "-")}-${exam.code}.xlsx`,
     "Jawaban",
     headers,
     rows

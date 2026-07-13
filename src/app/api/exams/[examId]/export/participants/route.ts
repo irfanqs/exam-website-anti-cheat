@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { getOwnedExam } from "@/lib/exam-ownership";
 import { xlsxResponse } from "@/lib/xlsx";
 import { VIOLATION_REASON } from "@/lib/violation-labels";
+import { formatDateWIB } from "@/lib/format-date";
 
 const STATUS_LABELS: Record<string, string> = {
   IN_PROGRESS: "Sedang mengerjakan",
@@ -68,8 +69,8 @@ export async function GET(
       STATUS_LABELS[s.status] ?? s.status,
       s.totalScore ?? 0,
       totalPoints,
-      s.startedAt.toISOString(),
-      s.submittedAt ? s.submittedAt.toISOString() : "",
+      formatDateWIB(s.startedAt),
+      s.submittedAt ? formatDateWIB(s.submittedAt) : "",
       s.violations.length,
       violationSummary,
     ];
