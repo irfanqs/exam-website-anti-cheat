@@ -69,7 +69,7 @@ src/components/ExamTimer.tsx         # Countdown berbasis deadline server
 src/components/SignOutButton.tsx     # Tombol keluar di dashboard admin
 ```
 
-## Status Implementasi (Scaffold Awal)
+## Status Implementasi
 
 Sudah ada:
 - Skema database lengkap sesuai PRD §4
@@ -77,10 +77,10 @@ Sudah ada:
 - Autentikasi admin (NextAuth Credentials) — `/admin/*` terlindungi middleware, ujian di-scope ke admin yang login
 - Manajemen soal: tambah soal (pilihan ganda satu/multi jawaban, isian singkat, essay) + bobot nilai, hapus soal, publish ujian (butuh minimal 1 soal)
 - API untuk buat ujian, join sesi, autosave jawaban, lapor pelanggaran, submit
+- Edit soal yang sudah dibuat (saat ini hanya tambah/hapus)
+- Export hasil ke Excel/CSV/PDF
+- Auto-scoring & penilaian manual essay
 
 Belum ada (lihat `PRD.md` §11 untuk keputusan yang diperlukan):
 - Registrasi admin dari UI (saat ini hanya lewat `npm run db:seed`)
-- Edit soal yang sudah dibuat (saat ini hanya tambah/hapus)
-- Auto-scoring & penilaian manual essay
-- Export hasil ke Excel/CSV/PDF
 - Dashboard monitoring real-time (saat ini hanya list statis dari DB)
