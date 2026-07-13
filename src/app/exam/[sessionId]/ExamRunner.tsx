@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExamTimer } from "@/components/ExamTimer";
 import { AntiCheatMonitor } from "@/components/AntiCheatMonitor";
+import { Spinner } from "@/components/Spinner";
 import { VIOLATION_REASON } from "@/lib/violation-labels";
 
 type Question = {
@@ -37,6 +38,7 @@ export function ExamRunner({
   const [submitted, setSubmitted] = useState(false);
   const [endMessage, setEndMessage] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const submitting = useRef(false);
   const pendingSaves = useRef<Promise<unknown>[]>([]);
 
@@ -44,6 +46,7 @@ export function ExamRunner({
     async (reason: "manual" | "timeout" | "violation") => {
       if (submitting.current) return;
       submitting.current = true;
+      setIsSubmitting(true);
 
       // Tunggu semua autosave jawaban yang masih berjalan supaya server
       // menilai berdasarkan jawaban terbaru, bukan state yang belum tersimpan
@@ -194,9 +197,11 @@ export function ExamRunner({
 
       <button
         onClick={() => submitExam("manual")}
-        className="mt-8 w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-medium text-white shadow-md shadow-blue-200 transition-transform hover:scale-[1.01]"
+        disabled={isSubmitting}
+        className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-medium text-white shadow-md shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-70"
       >
-        Submit Ujian
+        {isSubmitting && <Spinner className="h-4 w-4" />}
+        {isSubmitting ? "Mengirim jawaban..." : "Submit Ujian"}
       </button>
     </div>
   );

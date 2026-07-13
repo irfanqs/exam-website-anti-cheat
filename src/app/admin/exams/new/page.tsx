@@ -2,14 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Spinner } from "@/components/Spinner";
 
 export default function NewExamPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [antiCheatEnabled, setAntiCheatEnabled] = useState(true);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError(null);
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
@@ -27,10 +30,16 @@ export default function NewExamPage() {
       }),
     });
 
-    setLoading(false);
+    if (!res.ok) {
+      setLoading(false);
+      const data = await res.json();
+      setError(data.error ?? "Gagal membuat ujian");
+      return;
+    }
 
     const { exam } = await res.json();
     router.push(`/admin/exams/${exam.id}`);
+    // loading tetap true — halaman tujuan punya loading.tsx sendiri
   }
 
   return (
@@ -123,11 +132,14 @@ export default function NewExamPage() {
           )}
         </div>
 
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-70"
         >
+          {loading && <Spinner className="h-4 w-4" />}
           {loading ? "Menyimpan..." : "Simpan Ujian"}
         </button>
 

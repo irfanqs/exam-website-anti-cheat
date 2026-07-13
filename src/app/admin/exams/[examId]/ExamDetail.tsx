@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Spinner } from "@/components/Spinner";
 
 type QuestionType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "SHORT_ANSWER" | "ESSAY";
 
@@ -59,6 +60,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
 
   async function handleAddQuestion(payload: Record<string, unknown>) {
     const res = await fetch(`/api/exams/${examId}/questions`, {
@@ -112,7 +114,9 @@ export function ExamDetail({ examId, title, code, status, questions, participant
 
   async function handlePublish() {
     setError(null);
+    setPublishing(true);
     const res = await fetch(`/api/exams/${examId}/publish`, { method: "POST" });
+    setPublishing(false);
     if (!res.ok) {
       const data = await res.json();
       setError(data.error ?? "Gagal publish ujian");
@@ -123,7 +127,9 @@ export function ExamDetail({ examId, title, code, status, questions, participant
 
   async function handleUnpublish() {
     setError(null);
+    setPublishing(true);
     const res = await fetch(`/api/exams/${examId}/unpublish`, { method: "POST" });
+    setPublishing(false);
     if (!res.ok) {
       const data = await res.json();
       setError(data.error ?? "Gagal unpublish ujian");
@@ -151,16 +157,20 @@ export function ExamDetail({ examId, title, code, status, questions, participant
         {status === "DRAFT" && (
           <button
             onClick={handlePublish}
-            className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.02]"
+            disabled={publishing}
+            className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.02] disabled:opacity-70"
           >
+            {publishing && <Spinner className="h-4 w-4" />}
             Publish Ujian
           </button>
         )}
         {status === "PUBLISHED" && participants.length === 0 && (
           <button
             onClick={handleUnpublish}
-            className="rounded-lg border border-black/[.08] bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+            disabled={publishing}
+            className="flex items-center justify-center gap-2 rounded-lg border border-black/[.08] bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-70"
           >
+            {publishing && <Spinner className="h-4 w-4" />}
             Unpublish (kembalikan ke Draft)
           </button>
         )}
@@ -489,8 +499,9 @@ function QuestionForm({
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-70"
         >
+          {saving && <Spinner className="h-4 w-4" />}
           {saving ? "Menyimpan..." : submitLabel}
         </button>
         {onCancel && (

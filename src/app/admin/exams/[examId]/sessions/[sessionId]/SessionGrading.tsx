@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Spinner } from "@/components/Spinner";
 
 type QuestionType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "SHORT_ANSWER" | "ESSAY";
 
@@ -216,8 +217,9 @@ function QuestionAnswer({
             <button
               onClick={handleSaveScore}
               disabled={saving || !answer}
-              className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-blue-200 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-blue-200 disabled:opacity-70"
             >
+              {saving && <Spinner className="h-3 w-3" />}
               {saving ? "Menyimpan..." : "Simpan Nilai"}
             </button>
             {answer?.needsManualGrading && (

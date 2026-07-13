@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Spinner } from "@/components/Spinner";
 
 export default function JoinPage() {
   const router = useRouter();
@@ -22,9 +23,8 @@ export default function JoinPage() {
       body: JSON.stringify({ examCode, participantName }),
     });
 
-    setLoading(false);
-
     if (!res.ok) {
+      setLoading(false);
       const data = await res.json();
       setError(data.error ?? "Gagal masuk ujian");
       return;
@@ -32,6 +32,8 @@ export default function JoinPage() {
 
     const { sessionId } = await res.json();
     router.push(`/exam/${sessionId}`);
+    // loading tetap true — halaman /exam/[sessionId] akan menampilkan
+    // loading.tsx sendiri sambil query database berjalan.
   }
 
   return (
@@ -75,8 +77,9 @@ export default function JoinPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-medium text-white shadow-md shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-medium text-white shadow-md shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-70"
         >
+          {loading && <Spinner className="h-4 w-4" />}
           {loading ? "Memproses..." : "Mulai Ujian"}
         </button>
       </form>
