@@ -107,6 +107,12 @@ export function ExamRunner({
         <p className="text-lg">
           {endMessage ?? "Ujian selesai. Jawaban Anda sudah terkirim."}
         </p>
+        <a
+          href={`/api/exam-sessions/${sessionId}/export`}
+          className="rounded-lg border border-black/[.08] bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-zinc-50"
+        >
+          ⬇ Download Jawaban Saya (CSV)
+        </a>
         <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
           ← Kembali ke Beranda
         </Link>

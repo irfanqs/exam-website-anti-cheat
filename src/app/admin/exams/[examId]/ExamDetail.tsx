@@ -219,18 +219,27 @@ export function ExamDetail({ examId, title, code, status, questions, participant
       </div>
 
       <div className="mb-8 space-y-3">
-        <h2 className="text-sm font-medium text-zinc-500">
-          Daftar Peserta ({participants.length})
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-zinc-500">
+            Daftar Peserta ({participants.length})
+          </h2>
+          {participants.length > 0 && (
+            <a
+              href={`/api/exams/${examId}/export/participants`}
+              className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+            >
+              ⬇ Export Rekap Nilai (CSV)
+            </a>
+          )}
+        </div>
 
         {participants.length === 0 ? (
           <p className="text-sm text-zinc-500">Belum ada peserta yang mengerjakan.</p>
         ) : (
           participants.map((p) => (
-            <Link
+            <div
               key={p.id}
-              href={`/admin/exams/${examId}/sessions/${p.id}`}
-              className="flex items-center justify-between rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur transition-colors hover:bg-white"
+              className="flex flex-col gap-3 rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
                 <p className="font-medium">{p.participantName}</p>
@@ -244,10 +253,24 @@ export function ExamDetail({ examId, title, code, status, questions, participant
                   </p>
                 )}
               </div>
-              <p className="shrink-0 text-sm font-medium">
-                {p.totalScore ?? 0} / {p.totalPoints}
-              </p>
-            </Link>
+              <div className="flex shrink-0 items-center gap-3">
+                <p className="text-sm font-medium">
+                  {p.totalScore ?? 0} / {p.totalPoints}
+                </p>
+                <a
+                  href={`/api/exams/${examId}/sessions/${p.id}/export`}
+                  className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+                >
+                  Export CSV
+                </a>
+                <Link
+                  href={`/admin/exams/${examId}/sessions/${p.id}`}
+                  className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-blue-200"
+                >
+                  Lihat Detail
+                </Link>
+              </div>
+            </div>
           ))
         )}
       </div>

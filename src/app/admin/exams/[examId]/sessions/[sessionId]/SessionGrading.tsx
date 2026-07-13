@@ -52,9 +52,17 @@ export function SessionGrading({
 
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{participantName}</h1>
-        <p className="text-lg font-medium">
-          {totalScore ?? 0} / {totalPoints}
-        </p>
+        <div className="flex items-center gap-3">
+          <a
+            href={`/api/exams/${examId}/sessions/${sessionId}/export`}
+            className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+          >
+            ⬇ Export CSV
+          </a>
+          <p className="text-lg font-medium">
+            {totalScore ?? 0} / {totalPoints}
+          </p>
+        </div>
       </div>
 
       <div className="space-y-4">
