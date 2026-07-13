@@ -141,10 +141,10 @@ export function ExamDetail({ examId, title, code, status, questions, participant
         ← Kembali ke Dashboard
       </Link>
 
-      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">{title}</h1>
-          <p className="text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-zinc-500">
             Kode: {code} · Status: {status}
           </p>
         </div>
@@ -166,9 +166,9 @@ export function ExamDetail({ examId, title, code, status, questions, participant
         )}
       </div>
 
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-6 text-sm text-red-600">{error}</p>}
 
-      <div className="mb-8 space-y-3">
+      <div className="mb-10 space-y-4">
         <h2 className="text-sm font-medium text-zinc-500">
           Daftar Soal ({questions.length})
         </h2>
@@ -188,7 +188,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
             ) : (
               <div
                 key={q.id}
-                className="rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur"
+                className="rounded-xl border border-black/[.08] bg-white/70 p-5 shadow-sm backdrop-blur"
               >
                 <div className="flex items-start justify-between gap-4">
                   <p className="font-medium">
@@ -230,8 +230,8 @@ export function ExamDetail({ examId, title, code, status, questions, participant
         )}
       </div>
 
-      <div className="mb-8 space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="mb-10 space-y-4">
+        <div className="flex items-center justify-between gap-4">
           <h2 className="text-sm font-medium text-zinc-500">
             Daftar Peserta ({participants.length})
           </h2>
@@ -251,36 +251,38 @@ export function ExamDetail({ examId, title, code, status, questions, participant
           participants.map((p) => (
             <div
               key={p.id}
-              className="flex flex-col gap-3 rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-4 rounded-xl border border-black/[.08] bg-white/70 p-5 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between"
             >
-              <div>
+              <div className="space-y-1">
                 <p className="font-medium">{p.participantName}</p>
                 <p className="text-sm text-zinc-500">
                   {SESSION_STATUS_LABELS[p.status]}
                   {p.pendingGrading > 0 && ` · ${p.pendingGrading} soal essay perlu dinilai`}
                 </p>
                 {p.violationCount > 0 && (
-                  <p className="mt-1 text-sm text-amber-600">
+                  <p className="text-sm text-amber-600">
                     ⚠ {p.violationCount} pelanggaran terdeteksi: {p.violationSummary}
                   </p>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-3">
+              <div className="flex shrink-0 items-center gap-4">
                 <p className="text-sm font-medium">
                   {p.totalScore ?? 0} / {p.totalPoints}
                 </p>
-                <a
-                  href={`/api/exams/${examId}/sessions/${p.id}/export`}
-                  className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
-                >
-                  Export CSV
-                </a>
-                <Link
-                  href={`/admin/exams/${examId}/sessions/${p.id}`}
-                  className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-blue-200"
-                >
-                  Lihat Detail
-                </Link>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/api/exams/${examId}/sessions/${p.id}/export`}
+                    className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+                  >
+                    Export CSV
+                  </a>
+                  <Link
+                    href={`/admin/exams/${examId}/sessions/${p.id}`}
+                    className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-blue-200"
+                  >
+                    Lihat Detail
+                  </Link>
+                </div>
               </div>
             </div>
           ))

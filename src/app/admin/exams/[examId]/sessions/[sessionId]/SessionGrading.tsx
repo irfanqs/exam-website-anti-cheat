@@ -50,9 +50,9 @@ export function SessionGrading({
         ← Kembali ke Ujian
       </Link>
 
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold">{participantName}</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <a
             href={`/api/exams/${examId}/sessions/${sessionId}/export`}
             className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
@@ -65,7 +65,7 @@ export function SessionGrading({
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         {questions.map((q, i) => (
           <QuestionAnswer
             key={q.id}
@@ -141,12 +141,12 @@ function QuestionAnswer({
   }
 
   return (
-    <div className="rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur">
+    <div className="rounded-xl border border-black/[.08] bg-white/70 p-5 shadow-sm backdrop-blur">
       <div className="flex items-start justify-between gap-4">
         <p className="font-medium">
           {index + 1}. {question.text}
         </p>
-        <div className="flex shrink-0 flex-col items-end gap-1">
+        <div className="flex shrink-0 flex-col items-end gap-2">
           <p className="text-sm text-zinc-500">
             {answer?.score ?? 0} / {question.points} poin
           </p>
@@ -161,7 +161,7 @@ function QuestionAnswer({
       </div>
 
       {(question.type === "SINGLE_CHOICE" || question.type === "MULTIPLE_CHOICE") && (
-        <ul className="mt-2 space-y-1 text-sm">
+        <ul className="mt-3 space-y-1.5 text-sm">
           {question.choices.map((c) => {
             const selected = answer?.choiceIds.includes(c.id);
             return (
@@ -188,7 +188,7 @@ function QuestionAnswer({
       )}
 
       {question.type === "SHORT_ANSWER" && (
-        <div className="mt-2 space-y-1 text-sm">
+        <div className="mt-3 space-y-1.5 text-sm">
           <p>
             Jawaban peserta:{" "}
             <span className="font-medium">
@@ -200,7 +200,7 @@ function QuestionAnswer({
       )}
 
       {question.type === "ESSAY" && (
-        <div className="mt-2 space-y-2 text-sm">
+        <div className="mt-3 space-y-2 text-sm">
           <p className="whitespace-pre-wrap rounded-lg bg-zinc-50 p-3">
             {answer?.textAnswer?.trim() || "Tidak dijawab"}
           </p>

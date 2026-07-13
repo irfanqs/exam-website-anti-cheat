@@ -38,11 +38,17 @@ export function ExamRunner({
   const [endMessage, setEndMessage] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const submitting = useRef(false);
+  const pendingSaves = useRef<Promise<unknown>[]>([]);
 
   const submitExam = useCallback(
     async (reason: "manual" | "timeout" | "violation") => {
       if (submitting.current) return;
       submitting.current = true;
+
+      // Tunggu semua autosave jawaban yang masih berjalan supaya server
+      // menilai berdasarkan jawaban terbaru, bukan state yang belum tersimpan
+      // (race condition: klik jawaban lalu langsung klik submit).
+      await Promise.allSettled(pendingSaves.current);
 
       await fetch("/api/exam-sessions/submit", {
         method: "POST",
@@ -90,15 +96,16 @@ export function ExamRunner({
     // action === "LOG_ONLY": dicatat di server secara diam-diam, tidak ada UI yang berubah.
   }
 
-  async function saveAnswer(
+  function saveAnswer(
     questionId: string,
     payload: { textAnswer?: string; choiceIds?: string[] }
   ) {
-    await fetch("/api/answers", {
+    const promise = fetch("/api/answers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId, questionId, ...payload }),
     });
+    pendingSaves.current.push(promise);
   }
 
   if (submitted) {
