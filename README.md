@@ -55,6 +55,19 @@ Vercel jalan mulus dengan PostgreSQL — tidak perlu database lain. Supabase jug
 4. Deploy seperti biasa (`vercel` CLI atau hubungkan repo GitHub ke Vercel dashboard). `postinstall` script (`prisma generate`) otomatis jalan setiap build, jadi Prisma Client selalu fresh.
 5. Buat akun admin production: jalankan `npm run db:seed` dari lokal dengan `.env` yang menunjuk ke Supabase (bukan `prisma dev` lokal), atau jalankan lewat `vercel env pull` + `db:seed`.
 
+### Kalau pakai integrasi Vercel × Supabase (Marketplace)
+
+Kalau Supabase disambungkan ke project lewat tab **Integrations/Marketplace** di Vercel (bukan diisi manual), Vercel otomatis membuat env var dengan nama bawaan mereka sendiri, bukan `DATABASE_URL`/`DIRECT_URL`:
+
+| Env var dari integrasi | Setara dengan |
+|---|---|
+| `POSTGRES_PRISMA_URL` | pooled connection (untuk `DATABASE_URL`) |
+| `POSTGRES_URL_NON_POOLING` | direct connection (untuk `DIRECT_URL`) |
+
+Kode di `src/lib/prisma.ts` dan `prisma.config.ts` sudah fallback otomatis ke nama-nama ini kalau `DATABASE_URL`/`DIRECT_URL` tidak diset — jadi **tidak perlu setting manual apa pun** di Vercel untuk urusan database, integrasinya langsung jalan. Yang tetap perlu diisi manual di Vercel: `AUTH_SECRET`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` (integrasi Supabase tidak tahu-menahu soal NextAuth).
+
+Untuk jalankan migrasi dari lokal, tetap pakai `DIRECT_URL` biasa (ambil manual dari Supabase dashboard) — kode di lokal Anda tidak otomatis dapat env var integrasi Vercel kecuali Anda `vercel env pull`.
+
 ## Struktur Project
 
 ```
