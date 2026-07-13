@@ -94,7 +94,19 @@ export function ExamDetail({ examId, title, code, status, questions, participant
   }
 
   async function handleDeleteQuestion(questionId: string) {
-    await fetch(`/api/exams/${examId}/questions/${questionId}`, { method: "DELETE" });
+    if (!confirm("Hapus soal ini? Tindakan ini tidak bisa dibatalkan.")) return;
+
+    setError(null);
+    const res = await fetch(`/api/exams/${examId}/questions/${questionId}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error ?? "Gagal menghapus soal");
+      return;
+    }
+
     router.refresh();
   }
 
