@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getOwnedExam } from "@/lib/exam-ownership";
-import { toCsv, csvResponse } from "@/lib/csv";
+import { xlsxResponse } from "@/lib/xlsx";
 
 const TYPE_LABELS: Record<string, string> = {
   SINGLE_CHOICE: "Pilihan Ganda",
@@ -42,11 +42,9 @@ export async function GET(
 
   const answerByQuestionId = new Map(examSession.answers.map((a) => [a.questionId, a]));
 
-  const rows: (string | number | null)[][] = [
-    ["No", "Pertanyaan", "Tipe Soal", "Jawaban Peserta", "Skor", "Total Poin"],
-  ];
+  const headers = ["No", "Pertanyaan", "Tipe Soal", "Jawaban Peserta", "Skor", "Total Poin"];
 
-  questions.forEach((q, i) => {
+  const rows = questions.map((q, i) => {
     const answer = answerByQuestionId.get(q.id);
     let answerText = "Tidak dijawab";
 
@@ -57,11 +55,13 @@ export async function GET(
       answerText = answer.textAnswer;
     }
 
-    rows.push([i + 1, q.text, TYPE_LABELS[q.type] ?? q.type, answerText, answer?.score ?? 0, q.points]);
+    return [i + 1, q.text, TYPE_LABELS[q.type] ?? q.type, answerText, answer?.score ?? 0, q.points];
   });
 
-  return csvResponse(
-    `jawaban-${examSession.participantName.replace(/\s+/g, "-")}.csv`,
-    toCsv(rows)
+  return xlsxResponse(
+    `jawaban-${examSession.participantName.replace(/\s+/g, "-")}.xlsx`,
+    "Jawaban",
+    headers,
+    rows
   );
 }

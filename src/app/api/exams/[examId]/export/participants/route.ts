@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getOwnedExam } from "@/lib/exam-ownership";
-import { toCsv, csvResponse } from "@/lib/csv";
+import { xlsxResponse } from "@/lib/xlsx";
 import { VIOLATION_REASON } from "@/lib/violation-labels";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -38,21 +38,19 @@ export async function GET(
 
   const totalPoints = pointsAgg._sum.points ?? 0;
 
-  const rows: (string | number | null)[][] = [
-    [
-      "Nama",
-      "Referensi",
-      "Status",
-      "Skor",
-      "Total Poin",
-      "Waktu Mulai",
-      "Waktu Submit",
-      "Jumlah Pelanggaran",
-      "Ringkasan Pelanggaran",
-    ],
+  const headers = [
+    "Nama",
+    "Referensi",
+    "Status",
+    "Skor",
+    "Total Poin",
+    "Waktu Mulai",
+    "Waktu Submit",
+    "Jumlah Pelanggaran",
+    "Ringkasan Pelanggaran",
   ];
 
-  for (const s of sessions) {
+  const rows = sessions.map((s) => {
     const violationCounts = s.violations.reduce<Record<string, number>>((acc, v) => {
       acc[v.type] = (acc[v.type] ?? 0) + 1;
       return acc;
@@ -64,7 +62,7 @@ export async function GET(
       )
       .join("; ");
 
-    rows.push([
+    return [
       s.participantName,
       s.participantRef ?? "",
       STATUS_LABELS[s.status] ?? s.status,
@@ -74,8 +72,8 @@ export async function GET(
       s.submittedAt ? s.submittedAt.toISOString() : "",
       s.violations.length,
       violationSummary,
-    ]);
-  }
+    ];
+  });
 
-  return csvResponse(`rekap-${exam.code}.csv`, toCsv(rows));
+  return xlsxResponse(`rekap-${exam.code}.xlsx`, "Rekap Nilai", headers, rows);
 }

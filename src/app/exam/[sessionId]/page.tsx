@@ -43,7 +43,7 @@ export default async function ExamPage({
           href={`/api/exam-sessions/${session.id}/export`}
           className="rounded-lg border border-black/[.08] bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-zinc-50"
         >
-          ⬇ Download Jawaban Saya (CSV)
+          ⬇ Download Jawaban Saya (Excel)
         </a>
         <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
           ← Kembali ke Beranda

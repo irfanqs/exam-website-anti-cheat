@@ -250,7 +250,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
               href={`/api/exams/${examId}/export/participants`}
               className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
             >
-              ⬇ Export Rekap Nilai (CSV)
+              ⬇ Export Rekap Nilai (Excel)
             </a>
           )}
         </div>
@@ -284,7 +284,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
                     href={`/api/exams/${examId}/sessions/${p.id}/export`}
                     className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
                   >
-                    Export CSV
+                    Export Excel
                   </a>
                   <Link
                     href={`/admin/exams/${examId}/sessions/${p.id}`}

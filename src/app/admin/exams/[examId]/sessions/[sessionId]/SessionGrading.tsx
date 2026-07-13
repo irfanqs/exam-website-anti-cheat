@@ -58,7 +58,7 @@ export function SessionGrading({
             href={`/api/exams/${examId}/sessions/${sessionId}/export`}
             className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
           >
-            ⬇ Export CSV
+            ⬇ Export Excel
           </a>
           <p className="text-lg font-medium">
             {totalScore ?? 0} / {totalPoints}
