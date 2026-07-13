@@ -9,6 +9,9 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migrasi butuh koneksi langsung (non-pooled) ke Postgres. Kalau pakai
+    // Supabase, DATABASE_URL diisi connection string pooled (PgBouncer) untuk
+    // runtime app, sementara DIRECT_URL diisi direct connection khusus migrasi.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });
