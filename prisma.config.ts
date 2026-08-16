@@ -12,6 +12,14 @@ export default defineConfig({
     // Migrasi butuh koneksi langsung (non-pooled) ke Postgres. Kalau pakai
     // Supabase, DATABASE_URL diisi connection string pooled (PgBouncer) untuk
     // runtime app, sementara DIRECT_URL diisi direct connection khusus migrasi.
-    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
+    // Kalau Vercel disambungkan ke Supabase lewat integrasi resmi (Marketplace),
+    // nama env var-nya jadi POSTGRES_URL_NON_POOLING / POSTGRES_PRISMA_URL —
+    // fallback ke situ kalau DIRECT_URL/DATABASE_URL tidak diset manual.
+    url:
+      process.env["DIRECT_URL"] ??
+      process.env["POSTGRES_URL_NON_POOLING"] ??
+      process.env["DATABASE_URL"] ??
+      process.env["POSTGRES_PRISMA_URL"] ??
+      process.env["POSTGRES_URL"],
   },
 });

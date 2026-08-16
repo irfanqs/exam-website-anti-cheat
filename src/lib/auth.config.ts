@@ -17,9 +17,14 @@ export const authConfig = {
     authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
       const isLoginPage = request.nextUrl.pathname === "/admin/login";
+      const isAdminRoot = request.nextUrl.pathname === "/admin";
 
       if (isLoginPage) {
         return isLoggedIn ? Response.redirect(new URL("/admin", request.nextUrl)) : true;
+      }
+
+      if (isAdminRoot && !isLoggedIn) {
+        return Response.redirect(new URL("/admin/login", request.nextUrl));
       }
 
       return isLoggedIn;
