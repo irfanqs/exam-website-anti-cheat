@@ -56,6 +56,9 @@ export function AntiCheatMonitor({
           const result: ViolationResult = await res.json();
           onViolation(result);
         }
+      } catch {
+        // Perubahan lifecycle Safari dapat membatalkan request keepalive.
+        // Kegagalan pencatatan tidak boleh menjatuhkan halaman ujian.
       } finally {
         reporting.current = false;
       }
@@ -80,10 +83,17 @@ export function AntiCheatMonitor({
     document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     if (requireFullscreen) {
-      document.documentElement.requestFullscreen().catch(() => {
-        // Browser mungkin menolak permintaan fullscreen tanpa gesture user;
-        // ini bukan kegagalan fatal, hanya mengurangi lapisan deteksi.
-      });
+      const root = document.documentElement;
+
+      if (typeof root.requestFullscreen === "function") {
+        try {
+          void root.requestFullscreen().catch(() => {
+            // Browser dapat menolak fullscreen tanpa gesture pengguna.
+          });
+        } catch {
+          // Safari dapat melempar error sinkron saat fullscreen tidak tersedia.
+        }
+      }
     }
 
     return () => {
