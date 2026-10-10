@@ -32,7 +32,7 @@ export default function Home() {
   );
 }
 
-/** Ornamen geometris ala kanvas desain: grid, kotak terpilih, segitiga, pena. */
+/** Ornamen geometris ala kanvas desain: grid, kotak terpilih, segitiga. */
 function Decorations() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -60,11 +60,6 @@ function Decorations() {
 
       {/* Batang merah vertikal di kanan */}
       <div className="absolute top-10 right-6 h-36 w-6 border-2 border-ink bg-coral" />
-
-      {/* Kursor */}
-      <svg className="absolute top-44 right-14 hidden h-8 w-8 sm:block" viewBox="0 0 24 24">
-        <path d="M4 3 L20 11 L12 13 L9 21 Z" fill="#1b1b1b" />
-      </svg>
 
       {/* Bagian bawah: titik, persegi biru, setengah lingkaran merah, segitiga outline */}
       <svg className="absolute bottom-3 left-4 h-16 w-24" viewBox="0 0 96 64">
