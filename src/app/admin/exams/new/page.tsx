@@ -87,6 +87,8 @@ export default function NewExamPage() {
             Anti Cheat
             <input
               type="checkbox"
+              role="switch"
+              className="switch"
               checked={antiCheatEnabled}
               onChange={(e) => setAntiCheatEnabled(e.target.checked)}
             />
@@ -125,7 +127,7 @@ export default function NewExamPage() {
                 />
               </div>
 
-              <label className="flex items-center gap-2 text-xs">
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
                 <input name="requireFullscreen" type="checkbox" />
                 Wajibkan mode fullscreen selama ujian
               </label>

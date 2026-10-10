@@ -41,6 +41,61 @@ body {
   background: var(--color-sun);
 }
 
+/* Checkbox & radio bergaya sama dengan komponen lain: kotak/bulat bergaris
+   hitam tebal yang terisi kuning saat dipilih. */
+@layer base {
+  input[type="checkbox"],
+  input[type="radio"] {
+    appearance: none;
+    display: inline-block;
+    height: 1.2rem;
+    width: 1.2rem;
+    flex-shrink: 0;
+    margin: 0;
+    border: 2px solid var(--color-ink);
+    background-color: #fff;
+    vertical-align: middle;
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      box-shadow 120ms ease;
+  }
+
+  input[type="checkbox"] {
+    border-radius: 0.35rem;
+  }
+
+  input[type="radio"] {
+    border-radius: 999px;
+  }
+
+  input[type="checkbox"]:checked {
+    background: var(--color-sun)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%231b1b1b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / 85% no-repeat;
+  }
+
+  input[type="radio"]:checked {
+    background: radial-gradient(circle, var(--color-ink) 0.25rem, var(--color-sun) 0.28rem);
+  }
+
+  input[type="checkbox"]:focus-visible,
+  input[type="radio"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-sun);
+  }
+
+  /* Di dalam baris opsi yang sudah menyala kuning, isi tanda dibuat putih
+     supaya tetap kontras. */
+  .choice input[type="checkbox"]:checked {
+    background-color: #fff;
+  }
+
+  .choice input[type="radio"]:checked {
+    background: radial-gradient(circle, var(--color-ink) 0.25rem, #fff 0.28rem);
+  }
+}
+
 @layer components {
   /* Panel utama halaman, mirip "layar HP" pada referensi desain. */
   .shell {
@@ -257,10 +312,22 @@ body {
     box-shadow: 2px 2px 0 var(--color-ink);
   }
 
-  .choice input {
-    height: 1.1rem;
-    width: 1.1rem;
-    flex-shrink: 0;
-    accent-color: var(--color-ink);
+  /* Sakelar on/off untuk checkbox pengaturan (mis. toggle Anti Cheat). */
+  input[type="checkbox"].switch {
+    height: 1.6rem;
+    width: 2.9rem;
+    border-radius: 999px;
+    background: var(--color-paper)
+      radial-gradient(circle, var(--color-ink) 0.42rem, transparent 0.45rem)
+      no-repeat 0.12rem 50% / 1.25rem 1.25rem;
+    transition:
+      background-color 150ms ease,
+      background-position 150ms ease;
+  }
+
+  input[type="checkbox"].switch:checked {
+    background-color: var(--color-leaf);
+    background-image: radial-gradient(circle, var(--color-ink) 0.42rem, transparent 0.45rem);
+    background-position: calc(100% - 0.12rem) 50%;
   }
 }
