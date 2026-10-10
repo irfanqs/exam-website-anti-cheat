@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { expireOverdueSessions } from "@/lib/session-deadline";
 import { SignOutButton } from "@/components/SignOutButton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
 import { DeleteExamButton } from "@/components/DeleteExamButton";
@@ -12,6 +13,8 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/admin/login");
+
+  await expireOverdueSessions({ adminId: session.user.id });
 
   const exams = await prisma.exam.findMany({
     where: { adminId: session.user.id },

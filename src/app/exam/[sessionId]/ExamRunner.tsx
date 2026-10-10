@@ -44,6 +44,8 @@ function getDeviceInfo(): DeviceInfo {
 
 const noopSubscribe = () => () => {};
 
+type InitialAnswers = Record<string, { textAnswer: string | null; choiceIds: string[] }>;
+
 type Props = {
   sessionId: string;
   deadline: string;
@@ -52,6 +54,9 @@ type Props = {
   antiCheatEnabled: boolean;
   requireFullscreen: boolean;
   questions: Question[];
+  // Jawaban yang sudah tersimpan di server, supaya tetap tampil setelah
+  // halaman di-refresh atau peserta melanjutkan sesi.
+  initialAnswers: InitialAnswers;
 };
 
 export function ExamRunner({
@@ -62,6 +67,7 @@ export function ExamRunner({
   antiCheatEnabled,
   requireFullscreen,
   questions,
+  initialAnswers,
 }: Props) {
   const router = useRouter();
   const [submitted, setSubmitted] = useState(false);
@@ -75,7 +81,21 @@ export function ExamRunner({
   const saveQueues = useRef(new Map<string, Promise<unknown>>());
   const textDrafts = useRef(new Map<string, string>());
   const draftTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
-  const selectedChoices = useRef(new Map<string, Set<string>>());
+  const [selectedChoices] = useState(
+    () =>
+      new Map(
+        Object.entries(initialAnswers).map(([questionId, a]) => [questionId, new Set(a.choiceIds)])
+      )
+  );
+  const [answered, setAnswered] = useState(
+    () =>
+      new Set(
+        Object.entries(initialAnswers)
+          .filter(([, a]) => a.choiceIds.length > 0 || a.textAnswer?.trim())
+          .map(([questionId]) => questionId)
+      )
+  );
+  const [confirmingSubmit, setConfirmingSubmit] = useState(false);
   const device = useSyncExternalStore(noopSubscribe, getDeviceInfo, () => NO_DEVICE_INFO);
   const [mobileNoticeDismissed, setMobileNoticeDismissed] = useState(false);
 
@@ -114,7 +134,18 @@ export function ExamRunner({
     [saveAnswer]
   );
 
+  function markAnswered(questionId: string, isAnswered: boolean) {
+    setAnswered((prev) => {
+      if (prev.has(questionId) === isAnswered) return prev;
+      const next = new Set(prev);
+      if (isAnswered) next.add(questionId);
+      else next.delete(questionId);
+      return next;
+    });
+  }
+
   function handleTextChange(questionId: string, text: string) {
+    markAnswered(questionId, text.trim() !== "");
     textDrafts.current.set(questionId, text);
     clearTimeout(draftTimers.current.get(questionId));
     draftTimers.current.set(
@@ -144,13 +175,14 @@ export function ExamRunner({
     choiceId: string,
     checked: boolean
   ) {
-    let selected = selectedChoices.current.get(questionId);
+    let selected = selectedChoices.get(questionId);
     if (!selected || type === "SINGLE_CHOICE") {
       selected = new Set();
-      selectedChoices.current.set(questionId, selected);
+      selectedChoices.set(questionId, selected);
     }
     if (checked) selected.add(choiceId);
     else selected.delete(choiceId);
+    markAnswered(questionId, selected.size > 0);
     saveAnswer(questionId, { choiceIds: [...selected] });
   }
 
@@ -230,9 +262,6 @@ export function ExamRunner({
   }
 
   if (submitted) {
-    // Download jawaban sisi peserta dinonaktifkan sementara — untuk saat ini
-    // export hanya dilakukan admin. Endpoint /api/exam-sessions/[sessionId]/export
-    // tetap ada kalau nanti fitur ini diaktifkan lagi.
     return (
       <ExamEndScreen
         message={endMessage ?? "Jawaban Anda sudah terkirim."}
@@ -257,7 +286,9 @@ export function ExamRunner({
           <p className="truncate text-lg font-semibold">{participantName}</p>
           <p className="text-sm text-muted">Semangat, kerjakan dengan jujur!</p>
         </div>
-        <span className="pill bg-sky">{questions.length} soal</span>
+        <span className="pill bg-sky">
+          {answered.size}/{questions.length} terjawab
+        </span>
       </div>
 
       <div className="card mb-8 space-y-5 p-5">
@@ -343,6 +374,7 @@ export function ExamRunner({
                         handleChoiceChange(q.id, q.type, c.id, e.target.checked)
                       }
                       value={c.id}
+                      defaultChecked={initialAnswers[q.id]?.choiceIds.includes(c.id)}
                     />
                     {c.text}
                   </label>
@@ -355,6 +387,7 @@ export function ExamRunner({
                 className="input"
                 rows={q.type === "ESSAY" ? 6 : 2}
                 placeholder="Tulis jawaban Anda di sini..."
+                defaultValue={initialAnswers[q.id]?.textAnswer ?? ""}
                 onChange={(e) => handleTextChange(q.id, e.target.value)}
                 onBlur={() => handleTextBlur(q.id)}
               />
@@ -363,8 +396,43 @@ export function ExamRunner({
         ))}
       </div>
 
+      {confirmingSubmit && (
+        <div className="modal-backdrop">
+          <div className="modal space-y-4 text-center">
+            <p className="text-lg font-semibold">
+              <span className="marker">Kirim jawaban sekarang?</span>
+            </p>
+            {answered.size < questions.length ? (
+              <p className="rounded-xl border-2 border-ink bg-sun p-3 text-sm">
+                Masih ada <strong>{questions.length - answered.size} soal</strong> yang belum
+                dijawab.
+              </p>
+            ) : (
+              <p className="text-sm">Semua soal sudah dijawab.</p>
+            )}
+            <p className="text-sm text-muted">
+              Setelah dikirim, jawaban tidak bisa diubah lagi.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmingSubmit(false)} className="btn flex-1">
+                Periksa Lagi
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmingSubmit(false);
+                  submitExam("manual");
+                }}
+                className="btn btn-primary flex-1"
+              >
+                Ya, Kirim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <button
-        onClick={() => submitExam("manual")}
+        onClick={() => setConfirmingSubmit(true)}
         disabled={isSubmitting}
         className="btn btn-primary btn-lg mt-8 w-full"
       >

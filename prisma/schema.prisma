@@ -117,7 +117,7 @@ model ExamSession {
   examId String
 
   participantName String
-  participantRef  String? // NIM/NIS/email, opsional
+  participantRef  String? // NIM/NIS/email (dinormalisasi huruf kecil); wajib untuk sesi baru
 
   startedAt DateTime  @default(now())
   submittedAt DateTime?
@@ -133,6 +133,9 @@ model ExamSession {
   updatedAt DateTime @updatedAt
 
   @@index([examId])
+  // Satu identitas hanya punya satu sesi per ujian — masuk ulang
+  // melanjutkan sesi yang sama, bukan mengulang ujian dari awal.
+  @@unique([examId, participantRef])
 }
 
 enum SessionStatus {

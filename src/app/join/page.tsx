@@ -9,6 +9,7 @@ export default function JoinPage() {
   const router = useRouter();
   const [examCode, setExamCode] = useState("");
   const [participantName, setParticipantName] = useState("");
+  const [participantRef, setParticipantRef] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [debugError, setDebugError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export default function JoinPage() {
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ examCode, participantName }),
+        body: JSON.stringify({ examCode, participantName, participantRef }),
       });
 
       let data: { sessionId?: string; deadline?: string; error?: string };
@@ -75,7 +76,7 @@ export default function JoinPage() {
           <h1 className="text-2xl font-semibold">
             <span className="marker">Masuk Ujian</span>
           </h1>
-          <p className="text-sm text-muted">Masukkan kode dari pengawas dan nama lengkap Anda.</p>
+          <p className="text-sm text-muted">Masukkan kode dari pengawas dan identitas Anda.</p>
         </div>
 
         <div className="space-y-1">
@@ -98,6 +99,23 @@ export default function JoinPage() {
             className="input"
             placeholder="Nama sesuai identitas"
           />
+        </div>
+
+        <div className="space-y-1">
+          <label className="label">NIM / NIS / Email</label>
+          <input
+            required
+            value={participantRef}
+            onChange={(e) => setParticipantRef(e.target.value)}
+            className="input"
+            placeholder="mis. 2023010045"
+            autoCapitalize="none"
+            autoCorrect="off"
+          />
+          <p className="text-xs text-muted">
+            Dipakai untuk melanjutkan ujian jika halaman tertutup. Satu identitas hanya
+            bisa mengerjakan ujian ini sekali.
+          </p>
         </div>
 
         {error && <p className="text-sm font-medium text-brick">{error}</p>}

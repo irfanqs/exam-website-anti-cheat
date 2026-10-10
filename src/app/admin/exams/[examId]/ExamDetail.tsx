@@ -26,6 +26,7 @@ type SessionStatus =
 type Participant = {
   id: string;
   participantName: string;
+  participantRef: string | null;
   status: SessionStatus;
   violationCount: number;
   violationSummary: string;
@@ -273,7 +274,12 @@ export function ExamDetail({ examId, title, code, status, questions, participant
               <div className="flex items-start gap-3">
                 <Avatar name={p.participantName} className="h-11 w-11 text-base" />
                 <div className="space-y-1">
-                <p className="font-semibold">{p.participantName}</p>
+                <p className="font-semibold">
+                  {p.participantName}
+                  {p.participantRef && (
+                    <span className="ml-2 text-sm font-normal text-muted">{p.participantRef}</span>
+                  )}
+                </p>
                 <p className="text-sm text-muted">
                   {SESSION_STATUS_LABELS[p.status]}
                   {p.pendingGrading > 0 && ` · ${p.pendingGrading} soal essay perlu dinilai`}

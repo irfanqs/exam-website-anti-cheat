@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ExamRunner } from "./ExamRunner";
 import { ExamEndScreen } from "@/components/ExamEndScreen";
 import { VIOLATION_REASON } from "@/lib/violation-labels";
+import { expireSession, getDeadline } from "@/lib/session-deadline";
 
 const STATUS_MESSAGES: Record<string, string> = {
   SUBMITTED: "Jawaban Anda sudah tersimpan.",
@@ -19,10 +20,19 @@ export default async function ExamPage({
 
   const session = await prisma.examSession.findUnique({
     where: { id: sessionId },
-    include: { exam: { include: { questions: { include: { choices: true }, orderBy: { order: "asc" } } } } },
+    include: {
+      exam: { include: { questions: { include: { choices: true }, orderBy: { order: "asc" } } } },
+      answers: { include: { choices: { select: { choiceId: true } } } },
+    },
   });
 
   if (!session) notFound();
+
+  // Waktu habis saat peserta tidak membuka halaman (tab tertutup, HP mati):
+  // tutup & nilai sesinya sekarang, lalu tampilkan layar akhir.
+  if (await expireSession(session, session.exam)) {
+    session.status = "AUTO_SUBMITTED_TIMEOUT";
+  }
 
   if (session.status !== "IN_PROGRESS") {
     let message = STATUS_MESSAGES[session.status] ?? "Ujian ini sudah selesai dikerjakan.";
@@ -36,9 +46,6 @@ export default async function ExamPage({
       message = `Ujian dihentikan otomatis karena Anda terdeteksi ${reason}.`;
     }
 
-    // Download jawaban sisi peserta dinonaktifkan sementara — untuk saat ini
-    // export hanya dilakukan admin. Endpoint /api/exam-sessions/[sessionId]/export
-    // tetap ada kalau nanti fitur ini diaktifkan lagi.
     return (
       <ExamEndScreen
         message={message}
@@ -47,9 +54,7 @@ export default async function ExamPage({
     );
   }
 
-  const deadline = new Date(
-    session.startedAt.getTime() + session.exam.durationMinutes * 60_000
-  ).toISOString();
+  const deadline = getDeadline(session, session.exam).toISOString();
 
   return (
     <ExamRunner
@@ -57,6 +62,12 @@ export default async function ExamPage({
       deadline={deadline}
       examTitle={session.exam.title}
       participantName={session.participantName}
+      initialAnswers={Object.fromEntries(
+        session.answers.map((a) => [
+          a.questionId,
+          { textAnswer: a.textAnswer, choiceIds: a.choices.map((c) => c.choiceId) },
+        ])
+      )}
       antiCheatEnabled={session.exam.antiCheatEnabled}
       requireFullscreen={session.exam.requireFullscreen}
       questions={session.exam.questions.map((q) => ({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { expireOverdueSessions } from "@/lib/session-deadline";
 import { getOwnedExam } from "@/lib/exam-ownership";
 import { xlsxResponse } from "@/lib/xlsx";
 
@@ -25,6 +26,8 @@ export async function GET(
   if (!exam) {
     return NextResponse.json({ error: "Exam not found" }, { status: 404 });
   }
+
+  await expireOverdueSessions({ examId });
 
   const examSession = await prisma.examSession.findUnique({
     where: { id: sessionId },
