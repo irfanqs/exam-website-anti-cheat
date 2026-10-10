@@ -43,21 +43,37 @@ export async function expireSession(
   return true;
 }
 
+/** Batas sesi yang ditutup per request supaya halaman admin tidak timeout. */
+const EXPIRE_BATCH_LIMIT = 25;
+
 /**
- * Menutup semua sesi yang sudah lewat waktu pada satu ujian, atau pada
- * semua ujian milik satu admin. Dipanggil sebelum admin melihat/mengekspor
- * hasil supaya status & nilai yang tampil sudah final.
+ * Menutup sesi yang sudah lewat waktu pada satu ujian, atau pada semua
+ * ujian milik satu admin. Dipanggil sebelum admin melihat/mengekspor hasil
+ * supaya status & nilai yang tampil sudah final.
+ *
+ * Best-effort: kegagalan di sini hanya dicatat ke log dan tidak boleh
+ * membuat halaman admin gagal dimuat. Sisa sesi (di atas batas per request)
+ * diproses pada pemuatan berikutnya.
  */
 export async function expireOverdueSessions(filter: { examId: string } | { adminId: string }) {
-  const sessions = await prisma.examSession.findMany({
-    where: {
-      status: "IN_PROGRESS",
-      ...("examId" in filter ? { examId: filter.examId } : { exam: { adminId: filter.adminId } }),
-    },
-    select: { id: true, status: true, startedAt: true, exam: { select: { durationMinutes: true } } },
-  });
+  try {
+    const sessions = await prisma.examSession.findMany({
+      where: {
+        status: "IN_PROGRESS",
+        ...("examId" in filter ? { examId: filter.examId } : { exam: { adminId: filter.adminId } }),
+      },
+      select: { id: true, status: true, startedAt: true, exam: { select: { durationMinutes: true } } },
+    });
 
-  for (const session of sessions) {
-    await expireSession(session, session.exam);
+    const overdue = sessions.filter((s) => isOverdue(s, s.exam)).slice(0, EXPIRE_BATCH_LIMIT);
+    for (const session of overdue) {
+      try {
+        await expireSession(session, session.exam);
+      } catch (err) {
+        console.error(`[expireOverdueSessions] gagal menutup sesi ${session.id}`, err);
+      }
+    }
+  } catch (err) {
+    console.error("[expireOverdueSessions] gagal memuat sesi kedaluwarsa", err);
   }
 }

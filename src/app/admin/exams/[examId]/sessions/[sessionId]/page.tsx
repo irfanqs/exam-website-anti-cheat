@@ -22,7 +22,11 @@ export default async function SessionDetailPage({
     where: { id: sessionId, examId, exam: { adminId: authSession.user.id } },
     select: { id: true, status: true, startedAt: true, exam: { select: { durationMinutes: true } } },
   });
-  if (pending) await expireSession(pending, pending.exam);
+  if (pending) {
+    await expireSession(pending, pending.exam).catch((err) =>
+      console.error(`[SessionDetailPage] gagal menutup sesi ${pending.id}`, err)
+    );
+  }
 
   const examSession = await prisma.examSession.findUnique({
     where: { id: sessionId },
