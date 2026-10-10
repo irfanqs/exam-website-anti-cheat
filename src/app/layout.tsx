@@ -10,6 +10,10 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Ujian Online Anti-Cheat",
   description: "Platform ujian online dengan timer otomatis, penilaian per soal, dan deteksi kecurangan.",
+  // Google Translate mengganti teks halaman dengan elemen <font> miliknya,
+  // sehingga React gagal memperbarui DOM ("Failed to execute 'insertBefore'")
+  // dan halaman crash. Konten sudah berbahasa Indonesia, jadi terjemahan dimatikan.
+  other: { google: "notranslate" },
 };
 
 export default function RootLayout({
@@ -19,8 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      className={`${outfit.variable} h-full antialiased`}
+      lang="id"
+      translate="no"
+      className={`${outfit.variable} notranslate h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
