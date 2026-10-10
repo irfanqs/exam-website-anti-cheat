@@ -35,53 +35,55 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6">
-      <div className="mb-4 w-full max-w-sm">
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4">
+      <div className="mb-3 w-full max-w-sm px-2">
+        <Link href="/" className="back-link">
           ← Kembali ke Beranda
         </Link>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-5 rounded-xl border border-black/[.08] bg-white/80 p-8 shadow-lg shadow-blue-100/50 backdrop-blur"
+        className="shell my-0 max-w-sm space-y-5"
       >
-        <h1 className="text-xl font-semibold">Login Admin</h1>
+        <h1 className="text-2xl font-semibold">
+          <span className="marker">Login Admin</span>
+        </h1>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium">Email</label>
+          <label className="label">Email</label>
           <input
             name="email"
             type="email"
             required
-            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
+            className="input"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium">Password</label>
+          <label className="label">Password</label>
           <input
             name="password"
             type="password"
             required
-            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
+            className="input"
           />
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm font-medium text-brick">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-medium text-white shadow-md shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-70"
+          className="btn btn-primary btn-lg w-full"
         >
           {loading && <Spinner className="h-4 w-4" />}
           {loading ? "Memproses..." : "Masuk"}
         </button>
 
-        <p className="text-center text-xs text-zinc-500">
+        <p className="text-center text-xs text-muted">
           Belum punya akun admin? Jalankan{" "}
-          <code className="rounded bg-black/5 px-1">npm run db:seed</code>{" "}
+          <code className="rounded bg-sun px-1">npm run db:seed</code>{" "}
           untuk membuat akun awal (lihat README).
         </p>
       </form>

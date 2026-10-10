@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Spinner } from "@/components/Spinner";
+import { Avatar } from "@/components/Avatar";
 
 type QuestionType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "SHORT_ANSWER" | "ESSAY";
 
@@ -139,26 +140,30 @@ export function ExamDetail({ examId, title, code, status, questions, participant
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
+    <div className="shell max-w-2xl">
       <Link
         href="/admin"
-        className="mb-4 inline-block text-sm text-zinc-500 hover:text-zinc-800"
+        className="back-link mb-4 inline-block"
       >
         ← Kembali ke Dashboard
       </Link>
 
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">{title}</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Kode: {code} · Status: {status}
-          </p>
+        <div className="flex items-center gap-3">
+          <Avatar name={title} />
+          <div>
+            <h1 className="text-xl font-semibold">{title}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="pill bg-sun">Kode {code}</span>
+              <span className="pill bg-paper">{status}</span>
+            </div>
+          </div>
         </div>
         {status === "DRAFT" && (
           <button
             onClick={handlePublish}
             disabled={publishing}
-            className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.02] disabled:opacity-70"
+            className="btn btn-primary"
           >
             {publishing && <Spinner className="h-4 w-4" />}
             Publish Ujian
@@ -168,7 +173,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
           <button
             onClick={handleUnpublish}
             disabled={publishing}
-            className="flex items-center justify-center gap-2 rounded-lg border border-black/[.08] bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-70"
+            className="btn"
           >
             {publishing && <Spinner className="h-4 w-4" />}
             Unpublish (kembalikan ke Draft)
@@ -176,15 +181,16 @@ export function ExamDetail({ examId, title, code, status, questions, participant
         )}
       </div>
 
-      {error && <p className="mb-6 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-6 text-sm text-brick">{error}</p>}
 
       <div className="mb-10 space-y-4">
-        <h2 className="text-sm font-medium text-zinc-500">
-          Daftar Soal ({questions.length})
+        <h2 className="text-lg font-semibold">
+          <span className="marker">Daftar Soal</span>{" "}
+          <span className="pill bg-sky align-middle">{questions.length}</span>
         </h2>
 
         {questions.length === 0 ? (
-          <p className="text-sm text-zinc-500">Belum ada soal.</p>
+          <p className="text-sm text-muted">Belum ada soal.</p>
         ) : (
           questions.map((q, i) =>
             editingQuestionId === q.id ? (
@@ -198,7 +204,7 @@ export function ExamDetail({ examId, title, code, status, questions, participant
             ) : (
               <div
                 key={q.id}
-                className="rounded-xl border border-black/[.08] bg-white/70 p-5 shadow-sm backdrop-blur"
+                className="card p-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <p className="font-medium">
@@ -208,26 +214,26 @@ export function ExamDetail({ examId, title, code, status, questions, participant
                     <div className="flex shrink-0 gap-3">
                       <button
                         onClick={() => setEditingQuestionId(q.id)}
-                        className="text-xs text-blue-600 hover:underline"
+                        className="btn btn-sm"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteQuestion(q.id)}
-                        className="text-xs text-red-600 hover:underline"
+                        className="btn btn-sm btn-danger"
                       >
                         Hapus
                       </button>
                     </div>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-muted">
                   {TYPE_LABELS[q.type]} · {q.points} poin
                 </p>
                 {q.choices.length > 0 && (
                   <ul className="mt-2 space-y-1 text-sm">
                     {q.choices.map((c) => (
-                      <li key={c.id} className={c.isCorrect ? "font-medium text-emerald-600" : ""}>
+                      <li key={c.id} className={c.isCorrect ? "font-medium text-forest" : ""}>
                         {c.isCorrect ? "✓ " : "· "}
                         {c.text}
                       </li>
@@ -242,13 +248,14 @@ export function ExamDetail({ examId, title, code, status, questions, participant
 
       <div className="mb-10 space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-sm font-medium text-zinc-500">
-            Daftar Peserta ({participants.length})
+          <h2 className="text-lg font-semibold">
+            <span className="marker">Daftar Peserta</span>{" "}
+            <span className="pill bg-sky align-middle">{participants.length}</span>
           </h2>
           {participants.length > 0 && (
             <a
               href={`/api/exams/${examId}/export/participants`}
-              className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+              className="btn btn-sm"
             >
               ⬇ Export Rekap Nilai (Excel)
             </a>
@@ -256,39 +263,42 @@ export function ExamDetail({ examId, title, code, status, questions, participant
         </div>
 
         {participants.length === 0 ? (
-          <p className="text-sm text-zinc-500">Belum ada peserta yang mengerjakan.</p>
+          <p className="text-sm text-muted">Belum ada peserta yang mengerjakan.</p>
         ) : (
           participants.map((p) => (
             <div
               key={p.id}
-              className="flex flex-col gap-4 rounded-xl border border-black/[.08] bg-white/70 p-5 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-4 card p-5 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="space-y-1">
-                <p className="font-medium">{p.participantName}</p>
-                <p className="text-sm text-zinc-500">
+              <div className="flex items-start gap-3">
+                <Avatar name={p.participantName} className="h-11 w-11 text-base" />
+                <div className="space-y-1">
+                <p className="font-semibold">{p.participantName}</p>
+                <p className="text-sm text-muted">
                   {SESSION_STATUS_LABELS[p.status]}
                   {p.pendingGrading > 0 && ` · ${p.pendingGrading} soal essay perlu dinilai`}
                 </p>
                 {p.violationCount > 0 && (
-                  <p className="text-sm text-amber-600">
+                  <p className="text-sm text-brick font-medium">
                     ⚠ {p.violationCount} pelanggaran terdeteksi: {p.violationSummary}
                   </p>
                 )}
+                </div>
               </div>
               <div className="flex shrink-0 items-center gap-4">
-                <p className="text-sm font-medium">
+                <span className="pill bg-sky">
                   {p.totalScore ?? 0} / {p.totalPoints}
-                </p>
+                </span>
                 <div className="flex items-center gap-2">
                   <a
                     href={`/api/exams/${examId}/sessions/${p.id}/export`}
-                    className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+                    className="btn btn-sm"
                   >
                     Export Excel
                   </a>
                   <Link
                     href={`/admin/exams/${examId}/sessions/${p.id}`}
-                    className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-blue-200"
+                    className="btn btn-primary btn-sm"
                   >
                     Lihat Detail
                   </Link>
@@ -380,16 +390,18 @@ function QuestionForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-xl border border-black/[.08] bg-white/80 p-5 shadow-sm backdrop-blur"
+      className="space-y-4 card p-5"
     >
-      <h2 className="font-medium">{initial ? "Edit Soal" : "Tambah Soal"}</h2>
+      <h2 className="text-lg font-semibold">
+        <span className="marker">{initial ? "Edit Soal" : "Tambah Soal"}</span>
+      </h2>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium">Tipe Soal</label>
+        <label className="label">Tipe Soal</label>
         <select
           value={type}
           onChange={(e) => setType(e.target.value as QuestionType)}
-          className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
+          className="input"
         >
           <option value="SINGLE_CHOICE">Pilihan Ganda (1 jawaban)</option>
           <option value="MULTIPLE_CHOICE">Pilihan Ganda (multi jawaban)</option>
@@ -399,30 +411,30 @@ function QuestionForm({
       </div>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium">Pertanyaan</label>
+        <label className="label">Pertanyaan</label>
         <textarea
           name="text"
           required
           defaultValue={initial?.text}
-          className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
+          className="input"
         />
       </div>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium">Bobot Nilai</label>
+        <label className="label">Bobot Nilai</label>
         <input
           name="points"
           type="number"
           min={1}
           required
           defaultValue={initial?.points ?? 10}
-          className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
+          className="input"
         />
       </div>
 
       {isChoiceType && (
         <div className="space-y-2">
-          <label className="text-sm font-medium">Opsi Jawaban (tandai yang benar)</label>
+          <label className="label">Opsi Jawaban (tandai yang benar)</label>
           {choices.map((choice, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
@@ -451,13 +463,13 @@ function QuestionForm({
                   setChoices(next);
                 }}
                 placeholder={`Opsi ${i + 1}`}
-                className="flex-1 rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
+                className="input flex-1"
               />
               {choices.length > 2 && (
                 <button
                   type="button"
                   onClick={() => setChoices(choices.filter((_, idx) => idx !== i))}
-                  className="text-xs text-red-600"
+                  className="text-xs text-brick"
                 >
                   Hapus
                 </button>
@@ -467,7 +479,7 @@ function QuestionForm({
           <button
             type="button"
             onClick={() => setChoices([...choices, ""])}
-            className="text-xs text-zinc-500 hover:underline"
+            className="text-xs text-muted hover:underline"
           >
             + Tambah opsi
           </button>
@@ -476,30 +488,30 @@ function QuestionForm({
 
       {type === "SHORT_ANSWER" && (
         <div className="space-y-1">
-          <label className="text-sm font-medium">Kunci Jawaban</label>
+          <label className="label">Kunci Jawaban</label>
           <input
             name="correctTextAnswer"
             required
             defaultValue={initial?.correctTextAnswer ?? ""}
-            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
+            className="input"
           />
         </div>
       )}
 
       {type === "ESSAY" && (
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-muted">
           Soal essay tidak punya kunci jawaban otomatis — dinilai manual oleh admin setelah
           peserta submit.
         </p>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-brick">{error}</p>}
 
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={saving}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-70"
+          className="btn btn-primary flex-1"
         >
           {saving && <Spinner className="h-4 w-4" />}
           {saving ? "Menyimpan..." : submitLabel}
@@ -508,7 +520,7 @@ function QuestionForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-black/[.08] bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+            className="btn"
           >
             Batal
           </button>

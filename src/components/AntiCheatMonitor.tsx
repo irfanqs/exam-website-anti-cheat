@@ -181,14 +181,14 @@ export function AntiCheatMonitor({
   if (!showFullscreenPrompt) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-6">
-      <div className="w-full max-w-sm space-y-4 rounded-xl bg-white p-6 text-center shadow-xl">
-        <p className="text-sm text-zinc-700">
+    <div className="modal-backdrop">
+      <div className="modal space-y-4 text-center">
+        <p className="text-sm">
           Ujian ini wajib dikerjakan dalam mode layar penuh (fullscreen).
         </p>
         <button
           onClick={enterFullscreen}
-          className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200"
+          className="btn btn-primary w-full"
         >
           Masuk Mode Fullscreen
         </button>

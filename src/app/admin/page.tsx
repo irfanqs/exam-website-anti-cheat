@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { SignOutButton } from "@/components/SignOutButton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
 import { DeleteExamButton } from "@/components/DeleteExamButton";
+import { Avatar } from "@/components/Avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -21,28 +22,39 @@ export default async function AdminDashboardPage() {
     },
   });
 
+  const STATUS_PILL: Record<string, string> = {
+    DRAFT: "bg-paper",
+    PUBLISHED: "bg-leaf",
+    CLOSED: "bg-coral text-white",
+  };
+
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+    <div className="shell max-w-3xl pb-24">
+      <div className="mb-6 flex items-center gap-3">
+        <Avatar name={session.user.name ?? session.user.email ?? "Admin"} />
+        <div className="min-w-0 flex-1">
           <h1 className="text-xl font-semibold">Dashboard Ujian</h1>
-          <p className="text-sm text-zinc-500">{session.user.email}</p>
+          <p className="truncate text-sm text-muted">{session.user.email}</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/admin/exams/new"
-            className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.02]"
-          >
-            + Buat Ujian
-          </Link>
-          <SignOutButton />
-        </div>
+        <span className="pill hidden bg-sky sm:inline-flex">{exams.length} ujian</span>
+        <SignOutButton />
+      </div>
+
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">
+          <span className="marker">Ujian Saya</span>
+        </h2>
+        <Link href="/admin/exams/new" className="btn btn-primary btn-sm hidden sm:inline-flex">
+          + Buat Ujian
+        </Link>
       </div>
 
       {exams.length === 0 ? (
-        <p className="text-zinc-500">Belum ada ujian. Buat ujian pertama Anda.</p>
+        <div className="card p-8 text-center">
+          <p className="text-muted">Belum ada ujian. Buat ujian pertama Anda.</p>
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div className="card divide-y-2 divide-ink overflow-hidden">
           {exams.map((exam) => {
             const flaggedCount = exam.sessions.filter(
               (s) => s.status === "AUTO_SUBMITTED_VIOLATION"
@@ -54,31 +66,33 @@ export default async function AdminDashboardPage() {
             return (
             <div
               key={exam.id}
-              className="flex flex-col gap-3 rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
             >
-              <div>
-                <p className="font-medium">{exam.title}</p>
-                <p className="text-sm text-zinc-500">
-                  Kode: {exam.code} · {exam._count.questions} soal ·{" "}
-                  {exam._count.sessions} peserta · {exam.status}
-                </p>
-                {violatedCount > 0 && (
-                  <p className="mt-1 text-sm text-amber-600">
-                    ⚠ {violatedCount} peserta terdeteksi berpindah tab
-                    {flaggedCount > 0 &&
-                      ` · ${flaggedCount} di antaranya dihentikan otomatis karena melebihi batas pelanggaran`}
+              <div className="flex min-w-0 items-start gap-3">
+                <Avatar name={exam.title} className="h-11 w-11 text-base" />
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold">{exam.title}</p>
+                    <span className={`pill ${STATUS_PILL[exam.status] ?? "bg-paper"}`}>
+                      {exam.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted">
+                    Kode <span className="font-semibold text-ink">{exam.code}</span> ·{" "}
+                    {exam._count.questions} soal · {exam._count.sessions} peserta
                   </p>
-                )}
+                  {violatedCount > 0 && (
+                    <p className="mt-1 text-sm font-medium text-brick">
+                      ⚠ {violatedCount} peserta terdeteksi berpindah tab
+                      {flaggedCount > 0 &&
+                        ` · ${flaggedCount} di antaranya dihentikan otomatis karena melebihi batas pelanggaran`}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <CopyCodeButton
-                  code={exam.code}
-                  className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
-                />
-                <Link
-                  href={`/admin/exams/${exam.id}`}
-                  className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.02]"
-                >
+              <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                <CopyCodeButton code={exam.code} />
+                <Link href={`/admin/exams/${exam.id}`} className="btn btn-primary btn-sm">
                   Lihat Detail
                 </Link>
                 <DeleteExamButton examId={exam.id} title={exam.title} />
@@ -88,6 +102,10 @@ export default async function AdminDashboardPage() {
           })}
         </div>
       )}
+
+      <Link href="/admin/exams/new" className="fab" aria-label="Buat ujian baru">
+        +
+      </Link>
     </div>
   );
 }

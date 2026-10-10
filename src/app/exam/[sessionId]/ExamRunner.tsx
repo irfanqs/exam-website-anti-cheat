@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExamTimer } from "@/components/ExamTimer";
 import { AntiCheatMonitor } from "@/components/AntiCheatMonitor";
 import { Spinner } from "@/components/Spinner";
+import { Avatar } from "@/components/Avatar";
+import { ExamEndScreen } from "@/components/ExamEndScreen";
 import { VIOLATION_REASON } from "@/lib/violation-labels";
 
 type Question = {
@@ -47,6 +48,7 @@ type Props = {
   sessionId: string;
   deadline: string;
   examTitle: string;
+  participantName: string;
   antiCheatEnabled: boolean;
   requireFullscreen: boolean;
   questions: Question[];
@@ -56,6 +58,7 @@ export function ExamRunner({
   sessionId,
   deadline,
   examTitle,
+  participantName,
   antiCheatEnabled,
   requireFullscreen,
   questions,
@@ -227,31 +230,19 @@ export function ExamRunner({
   }
 
   if (submitted) {
+    // Download jawaban sisi peserta dinonaktifkan sementara — untuk saat ini
+    // export hanya dilakukan admin. Endpoint /api/exam-sessions/[sessionId]/export
+    // tetap ada kalau nanti fitur ini diaktifkan lagi.
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg">
-          {endMessage ?? "Ujian selesai. Jawaban Anda sudah terkirim."}
-        </p>
-        <p className="text-sm text-zinc-500">Terima kasih telah mengerjakan ujian ini.</p>
-        {/* Download jawaban sisi peserta dinonaktifkan sementara — untuk saat
-            ini export hanya dilakukan admin. Endpoint /api/exam-sessions/[sessionId]/export
-            tetap ada kalau nanti fitur ini diaktifkan lagi.
-        <a
-          href={`/api/exam-sessions/${sessionId}/export`}
-          className="rounded-lg border border-black/[.08] bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-zinc-50"
-        >
-          ⬇ Download Jawaban Saya (Excel)
-        </a>
-        */}
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
-          ← Kembali ke Beranda
-        </Link>
-      </div>
+      <ExamEndScreen
+        message={endMessage ?? "Jawaban Anda sudah terkirim."}
+        stopped={endMessage !== null}
+      />
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
+    <div className="shell max-w-2xl">
       <AntiCheatMonitor
         sessionId={sessionId}
         enabled={antiCheatEnabled}
@@ -260,23 +251,35 @@ export function ExamRunner({
         beforeReport={flushTextDrafts}
       />
 
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{examTitle}</h1>
+      <div className="mb-6 flex items-center gap-3">
+        <Avatar name={participantName} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-lg font-semibold">{participantName}</p>
+          <p className="text-sm text-muted">Semangat, kerjakan dengan jujur!</p>
+        </div>
+        <span className="pill bg-sky">{questions.length} soal</span>
+      </div>
+
+      <div className="card mb-8 space-y-5 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-xl font-semibold">{examTitle}</h1>
+          {antiCheatEnabled && <span className="pill bg-sun">Anti Cheat</span>}
+        </div>
         <ExamTimer deadline={deadline} onTimeUp={() => submitExam("timeout")} />
       </div>
 
       {antiCheatEnabled && device.mobile && !mobileNoticeDismissed && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
-          <div className="w-full max-w-sm space-y-4 rounded-xl border border-blue-300 bg-white p-6 shadow-xl">
-            <p className="text-center text-lg font-semibold text-blue-700">
-              Sebelum Mengerjakan di HP
+        <div className="modal-backdrop">
+          <div className="modal space-y-4">
+            <p className="text-center text-lg font-semibold">
+              <span className="marker">Sebelum Mengerjakan di HP</span>
             </p>
-            <p className="text-sm text-zinc-700">
+            <p className="text-sm">
               Ujian ini memakai deteksi kecurangan. Keluar dari halaman ujian lebih
               dari beberapa detik dihitung sebagai pelanggaran. Supaya tidak
               tercatat tanpa sengaja:
             </p>
-            <ul className="list-disc space-y-1 pl-5 text-sm text-zinc-700">
+            <ul className="list-disc space-y-1 pl-5 text-sm">
               <li>
                 Matikan kunci layar otomatis (iPhone: Pengaturan → Layar &amp;
                 Kecerahan → Kunci Otomatis → Tidak Pernah) dan nonaktifkan Mode
@@ -286,14 +289,14 @@ export function ExamRunner({
               <li>Jangan membuka Pusat Kontrol, notifikasi, atau aplikasi lain.</li>
             </ul>
             {device.inAppBrowser && (
-              <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+              <p className="rounded-xl border-2 border-ink bg-sun p-3 text-sm">
                 Anda membuka ujian dari dalam aplikasi lain (mis. WhatsApp atau
                 Instagram). Sebaiknya salin link ujian dan buka di Safari atau Chrome.
               </p>
             )}
             <button
               onClick={() => setMobileNoticeDismissed(true)}
-              className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200"
+              className="btn btn-primary w-full"
             >
               Saya Mengerti
             </button>
@@ -302,33 +305,37 @@ export function ExamRunner({
       )}
 
       {warning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
-          <div className="w-full max-w-sm space-y-4 rounded-xl border border-amber-400 bg-white p-6 text-center shadow-xl">
-            <p className="text-lg font-semibold text-amber-600">
-              ⚠ Peringatan Anti Cheat
-            </p>
-            <p className="text-sm text-zinc-700">{warning}</p>
-            <button
-              onClick={() => setWarning(null)}
-              className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200"
-            >
+        <div className="modal-backdrop">
+          <div className="modal space-y-4 text-center">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink bg-coral text-2xl font-bold text-white">
+              !
+            </span>
+            <p className="text-lg font-semibold">Peringatan Anti Cheat</p>
+            <p className="text-sm">{warning}</p>
+            <button onClick={() => setWarning(null)} className="btn btn-primary w-full">
               Saya Mengerti
             </button>
           </div>
         </div>
       )}
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {questions.map((q, i) => (
-          <div key={q.id} className="rounded-xl border border-black/[.08] bg-white/70 p-5 shadow-sm backdrop-blur">
-            <p className="mb-3 font-medium">
-              {i + 1}. {q.text}
-            </p>
+          <div key={q.id} className="card p-5">
+            <div className="mb-4 flex items-start gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sun text-sm font-bold">
+                {i + 1}
+              </span>
+              <p className="pt-0.5 font-medium whitespace-pre-wrap">{q.text}</p>
+            </div>
 
             {(q.type === "SINGLE_CHOICE" || q.type === "MULTIPLE_CHOICE") && (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
+                {q.type === "MULTIPLE_CHOICE" && (
+                  <p className="text-xs font-medium text-muted">Boleh pilih lebih dari satu.</p>
+                )}
                 {q.choices.map((c) => (
-                  <label key={c.id} className="flex items-center gap-2 text-sm">
+                  <label key={c.id} className="choice">
                     <input
                       type={q.type === "SINGLE_CHOICE" ? "radio" : "checkbox"}
                       name={q.id}
@@ -345,8 +352,9 @@ export function ExamRunner({
 
             {(q.type === "SHORT_ANSWER" || q.type === "ESSAY") && (
               <textarea
-                className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
+                className="input"
                 rows={q.type === "ESSAY" ? 6 : 2}
+                placeholder="Tulis jawaban Anda di sini..."
                 onChange={(e) => handleTextChange(q.id, e.target.value)}
                 onBlur={() => handleTextBlur(q.id)}
               />
@@ -358,10 +366,10 @@ export function ExamRunner({
       <button
         onClick={() => submitExam("manual")}
         disabled={isSubmitting}
-        className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-medium text-white shadow-md shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-70"
+        className="btn btn-primary btn-lg mt-8 w-full"
       >
         {isSubmitting && <Spinner className="h-4 w-4" />}
-        {isSubmitting ? "Mengirim jawaban..." : "Submit Ujian"}
+        {isSubmitting ? "Mengirim jawaban..." : "Selesai & Kirim Jawaban"}
       </button>
     </div>
   );
