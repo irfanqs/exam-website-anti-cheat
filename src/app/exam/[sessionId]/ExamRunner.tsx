@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExamTimer } from "@/components/ExamTimer";
@@ -16,6 +16,32 @@ type Question = {
 };
 
 type ViolationType = "TAB_HIDDEN" | "WINDOW_BLUR" | "EXIT_FULLSCREEN";
+
+type AnswerPayload = { textAnswer?: string; choiceIds?: string[] };
+
+// Jawaban teks disimpan otomatis setelah peserta berhenti mengetik selama ini.
+const TEXT_AUTOSAVE_MS = 1500;
+
+type DeviceInfo = { mobile: boolean; inAppBrowser: boolean };
+
+const NO_DEVICE_INFO: DeviceInfo = { mobile: false, inAppBrowser: false };
+let cachedDeviceInfo: DeviceInfo | null = null;
+
+function getDeviceInfo(): DeviceInfo {
+  if (!cachedDeviceInfo) {
+    const ua = navigator.userAgent;
+    cachedDeviceInfo = {
+      // iPadOS mengaku sebagai Mac, jadi dicek lewat touch point.
+      mobile:
+        /iPhone|iPad|iPod|Android/i.test(ua) ||
+        (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1),
+      inAppBrowser: /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|Twitter|TikTok|musical_ly|BytedanceWebview/i.test(ua),
+    };
+  }
+  return cachedDeviceInfo;
+}
+
+const noopSubscribe = () => () => {};
 
 type Props = {
   sessionId: string;
@@ -41,6 +67,106 @@ export function ExamRunner({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitting = useRef(false);
   const pendingSaves = useRef<Promise<unknown>[]>([]);
+  // Antrian per soal supaya request simpan untuk soal yang sama tidak
+  // saling mendahului (jawaban lama menimpa jawaban baru).
+  const saveQueues = useRef(new Map<string, Promise<unknown>>());
+  const textDrafts = useRef(new Map<string, string>());
+  const draftTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const selectedChoices = useRef(new Map<string, Set<string>>());
+  const device = useSyncExternalStore(noopSubscribe, getDeviceInfo, () => NO_DEVICE_INFO);
+  const [mobileNoticeDismissed, setMobileNoticeDismissed] = useState(false);
+
+  const saveAnswer = useCallback(
+    (questionId: string, payload: AnswerPayload, keepalive = false) => {
+      const previous = saveQueues.current.get(questionId) ?? Promise.resolve();
+      const promise = previous
+        .catch(() => {})
+        .then(() =>
+          fetch("/api/answers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId, questionId, ...payload }),
+            keepalive,
+          })
+        );
+      saveQueues.current.set(questionId, promise);
+      pendingSaves.current.push(promise);
+      return promise;
+    },
+    [sessionId]
+  );
+
+  // Kirim semua jawaban teks yang belum tersimpan sekarang juga.
+  const flushTextDrafts = useCallback(
+    (keepalive = false) => {
+      const saves: Promise<unknown>[] = [];
+      for (const [questionId, text] of textDrafts.current) {
+        clearTimeout(draftTimers.current.get(questionId));
+        draftTimers.current.delete(questionId);
+        saves.push(saveAnswer(questionId, { textAnswer: text }, keepalive));
+      }
+      textDrafts.current.clear();
+      return Promise.allSettled(saves);
+    },
+    [saveAnswer]
+  );
+
+  function handleTextChange(questionId: string, text: string) {
+    textDrafts.current.set(questionId, text);
+    clearTimeout(draftTimers.current.get(questionId));
+    draftTimers.current.set(
+      questionId,
+      setTimeout(() => {
+        draftTimers.current.delete(questionId);
+        const draft = textDrafts.current.get(questionId);
+        if (draft === undefined) return;
+        textDrafts.current.delete(questionId);
+        saveAnswer(questionId, { textAnswer: draft });
+      }, TEXT_AUTOSAVE_MS)
+    );
+  }
+
+  function handleTextBlur(questionId: string) {
+    const draft = textDrafts.current.get(questionId);
+    if (draft === undefined) return;
+    clearTimeout(draftTimers.current.get(questionId));
+    draftTimers.current.delete(questionId);
+    textDrafts.current.delete(questionId);
+    saveAnswer(questionId, { textAnswer: draft });
+  }
+
+  function handleChoiceChange(
+    questionId: string,
+    type: Question["type"],
+    choiceId: string,
+    checked: boolean
+  ) {
+    let selected = selectedChoices.current.get(questionId);
+    if (!selected || type === "SINGLE_CHOICE") {
+      selected = new Set();
+      selectedChoices.current.set(questionId, selected);
+    }
+    if (checked) selected.add(choiceId);
+    else selected.delete(choiceId);
+    saveAnswer(questionId, { choiceIds: [...selected] });
+  }
+
+  // iOS membekukan halaman begitu peserta meninggalkannya, jadi jawaban
+  // yang sedang diketik dikirim (keepalive) tepat saat halaman disembunyikan.
+  useEffect(() => {
+    function handleHide() {
+      if (document.visibilityState === "hidden") void flushTextDrafts(true);
+    }
+    function handlePageHide() {
+      void flushTextDrafts(true);
+    }
+    document.addEventListener("visibilitychange", handleHide);
+    window.addEventListener("pagehide", handlePageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", handleHide);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [flushTextDrafts]);
 
   const submitExam = useCallback(
     async (reason: "manual" | "timeout" | "violation") => {
@@ -51,6 +177,7 @@ export function ExamRunner({
       // Tunggu semua autosave jawaban yang masih berjalan supaya server
       // menilai berdasarkan jawaban terbaru, bukan state yang belum tersimpan
       // (race condition: klik jawaban lalu langsung klik submit).
+      await flushTextDrafts();
       await Promise.allSettled(pendingSaves.current);
 
       await fetch("/api/exam-sessions/submit", {
@@ -65,7 +192,7 @@ export function ExamRunner({
       setSubmitted(true);
       router.refresh();
     },
-    [sessionId, router]
+    [sessionId, router, flushTextDrafts]
   );
 
   function handleViolation(result: {
@@ -99,18 +226,6 @@ export function ExamRunner({
     // action === "LOG_ONLY": dicatat di server secara diam-diam, tidak ada UI yang berubah.
   }
 
-  function saveAnswer(
-    questionId: string,
-    payload: { textAnswer?: string; choiceIds?: string[] }
-  ) {
-    const promise = fetch("/api/answers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId, questionId, ...payload }),
-    });
-    pendingSaves.current.push(promise);
-  }
-
   if (submitted) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
@@ -142,12 +257,49 @@ export function ExamRunner({
         enabled={antiCheatEnabled}
         requireFullscreen={requireFullscreen}
         onViolation={handleViolation}
+        beforeReport={flushTextDrafts}
       />
 
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{examTitle}</h1>
         <ExamTimer deadline={deadline} onTimeUp={() => submitExam("timeout")} />
       </div>
+
+      {antiCheatEnabled && device.mobile && !mobileNoticeDismissed && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
+          <div className="w-full max-w-sm space-y-4 rounded-xl border border-blue-300 bg-white p-6 shadow-xl">
+            <p className="text-center text-lg font-semibold text-blue-700">
+              Sebelum Mengerjakan di HP
+            </p>
+            <p className="text-sm text-zinc-700">
+              Ujian ini memakai deteksi kecurangan. Keluar dari halaman ujian lebih
+              dari beberapa detik dihitung sebagai pelanggaran. Supaya tidak
+              tercatat tanpa sengaja:
+            </p>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-zinc-700">
+              <li>
+                Matikan kunci layar otomatis (iPhone: Pengaturan → Layar &amp;
+                Kecerahan → Kunci Otomatis → Tidak Pernah) dan nonaktifkan Mode
+                Daya Rendah.
+              </li>
+              <li>Aktifkan mode Jangan Ganggu / Fokus agar tidak ada telepon masuk.</li>
+              <li>Jangan membuka Pusat Kontrol, notifikasi, atau aplikasi lain.</li>
+            </ul>
+            {device.inAppBrowser && (
+              <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+                Anda membuka ujian dari dalam aplikasi lain (mis. WhatsApp atau
+                Instagram). Sebaiknya salin link ujian dan buka di Safari atau Chrome.
+              </p>
+            )}
+            <button
+              onClick={() => setMobileNoticeDismissed(true)}
+              className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-200"
+            >
+              Saya Mengerti
+            </button>
+          </div>
+        </div>
+      )}
 
       {warning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
@@ -180,7 +332,9 @@ export function ExamRunner({
                     <input
                       type={q.type === "SINGLE_CHOICE" ? "radio" : "checkbox"}
                       name={q.id}
-                      onChange={(e) => saveAnswer(q.id, { choiceIds: [e.target.value] })}
+                      onChange={(e) =>
+                        handleChoiceChange(q.id, q.type, c.id, e.target.checked)
+                      }
                       value={c.id}
                     />
                     {c.text}
@@ -193,7 +347,8 @@ export function ExamRunner({
               <textarea
                 className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
                 rows={q.type === "ESSAY" ? 6 : 2}
-                onBlur={(e) => saveAnswer(q.id, { textAnswer: e.target.value })}
+                onChange={(e) => handleTextChange(q.id, e.target.value)}
+                onBlur={() => handleTextBlur(q.id)}
               />
             )}
           </div>

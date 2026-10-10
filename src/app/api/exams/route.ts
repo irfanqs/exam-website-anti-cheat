@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       durationMinutes,
       antiCheatEnabled: antiCheatEnabled ?? true,
       violationAction: violationAction ?? "AUTO_SUBMIT",
-      tabViolationTolerance: tabViolationTolerance ?? 0,
+      tabViolationTolerance: tabViolationTolerance ?? 2,
       requireFullscreen: requireFullscreen ?? false,
       adminId: session.user.id,
       status: "DRAFT",

@@ -114,7 +114,7 @@ export default function NewExamPage() {
                   type="number"
                   min={0}
                   required
-                  defaultValue={0}
+                  defaultValue={2}
                   className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
                 />
               </div>
@@ -123,6 +123,12 @@ export default function NewExamPage() {
                 <input name="requireFullscreen" type="checkbox" />
                 Wajibkan mode fullscreen selama ujian
               </label>
+              <p className="text-xs text-zinc-500">
+                Catatan: Safari di iPhone tidak mendukung mode fullscreen untuk
+                halaman web, sehingga syarat ini tidak berlaku bagi peserta iPhone.
+                Keluar halaman kurang dari 4 detik (mis. layar terkunci sesaat)
+                tidak dihitung sebagai pelanggaran.
+              </p>
             </>
           ) : (
             <p className="text-xs text-zinc-500">
