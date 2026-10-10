@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 
-const DEFAULT_CLASSES =
-  "rounded border border-black/[.08] bg-white px-2 py-0.5 text-xs hover:bg-zinc-50";
+const DEFAULT_CLASSES = "btn btn-sm";
 
 export function CopyCodeButton({ code, className }: { code: string; className?: string }) {
   const [copied, setCopied] = useState(false);

@@ -30,12 +30,34 @@ export function ExamTimer({ deadline, onTimeUp }: Props) {
   }, [deadline, onTimeUp]);
 
   const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
-  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  const hours = Math.floor(totalSeconds / 3600);
+  const units = [
+    ...(hours > 0 ? [{ value: hours, label: "Jam" }] : []),
+    { value: Math.floor((totalSeconds % 3600) / 60), label: "Menit" },
+    { value: totalSeconds % 60, label: "Detik" },
+  ];
+  const almostOver = totalSeconds <= 60;
 
   return (
-    <div className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-mono text-lg tabular-nums text-white shadow-sm shadow-blue-200">
-      {minutes}:{seconds}
+    <div className="flex items-start justify-center gap-2" role="timer" aria-live="off">
+      {units.map((unit, i) => (
+        <div key={unit.label} className="flex items-start gap-2">
+          {i > 0 && <span className="pt-2 text-2xl font-bold text-coral">:</span>}
+          <div className="flex flex-col items-center gap-1">
+            <span
+              className={`flex h-14 w-14 items-center justify-center rounded-xl border-2 border-ink text-3xl font-semibold tabular-nums shadow-[3px_3px_0_#1b1b1b] sm:h-16 sm:w-16 ${
+                almostOver ? "bg-coral text-white" : "bg-white"
+              }`}
+            >
+              {String(unit.value).padStart(2, "0")}
+            </span>
+            <span className="text-xs font-medium">
+              <span className="text-coral">{unit.label[0]}</span>
+              {unit.label.slice(1)}
+            </span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

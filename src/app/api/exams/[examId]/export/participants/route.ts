@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { expireOverdueSessions } from "@/lib/session-deadline";
 import { getOwnedExam } from "@/lib/exam-ownership";
 import { xlsxResponse } from "@/lib/xlsx";
 import { VIOLATION_REASON } from "@/lib/violation-labels";
@@ -27,6 +28,8 @@ export async function GET(
   if (!exam) {
     return NextResponse.json({ error: "Exam not found" }, { status: 404 });
   }
+
+  await expireOverdueSessions({ examId });
 
   const [sessions, pointsAgg] = await Promise.all([
     prisma.examSession.findMany({

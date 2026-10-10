@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Spinner } from "@/components/Spinner";
+import { Avatar } from "@/components/Avatar";
 
 type QuestionType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "SHORT_ANSWER" | "ESSAY";
 
@@ -43,26 +44,32 @@ export function SessionGrading({
   const router = useRouter();
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
+    <div className="shell max-w-2xl">
       <Link
         href={`/admin/exams/${examId}`}
-        className="mb-4 inline-block text-sm text-zinc-500 hover:text-zinc-800"
+        className="back-link mb-4 inline-block"
       >
         ← Kembali ke Ujian
       </Link>
 
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-semibold">{participantName}</h1>
+        <div className="flex items-center gap-3">
+          <Avatar name={participantName} />
+          <div>
+            <h1 className="text-xl font-semibold">{participantName}</h1>
+            <p className="text-sm text-muted">Hasil &amp; penilaian jawaban</p>
+          </div>
+        </div>
         <div className="flex items-center gap-4">
           <a
             href={`/api/exams/${examId}/sessions/${sessionId}/export`}
-            className="rounded-lg border border-black/[.08] bg-white px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+            className="btn btn-sm"
           >
             ⬇ Export Excel
           </a>
-          <p className="text-lg font-medium">
+          <span className="pill bg-sky px-3 py-1 text-base">
             {totalScore ?? 0} / {totalPoints}
-          </p>
+          </span>
         </div>
       </div>
 
@@ -107,16 +114,16 @@ function QuestionAnswer({
 
   let statusBadge: { label: string; className: string } | null = null;
   if (isUnanswered) {
-    statusBadge = { label: "Tidak Dijawab", className: "bg-zinc-100 text-zinc-600" };
+    statusBadge = { label: "Tidak Dijawab", className: "bg-paper" };
   } else if (question.type === "ESSAY") {
     statusBadge = answer?.needsManualGrading
-      ? { label: "Menunggu Penilaian", className: "bg-amber-100 text-amber-700" }
-      : { label: "Sudah Dinilai", className: "bg-emerald-100 text-emerald-700" };
+      ? { label: "Menunggu Penilaian", className: "bg-sun" }
+      : { label: "Sudah Dinilai", className: "bg-leaf" };
   } else {
     statusBadge =
       answer?.score === question.points
-        ? { label: "Benar", className: "bg-emerald-100 text-emerald-700" }
-        : { label: "Salah", className: "bg-red-100 text-red-700" };
+        ? { label: "Benar", className: "bg-leaf" }
+        : { label: "Salah", className: "bg-coral text-white" };
   }
 
   async function handleSaveScore() {
@@ -142,18 +149,18 @@ function QuestionAnswer({
   }
 
   return (
-    <div className="rounded-xl border border-black/[.08] bg-white/70 p-5 shadow-sm backdrop-blur">
+    <div className="card p-5">
       <div className="flex items-start justify-between gap-4">
         <p className="font-medium">
           {index + 1}. {question.text}
         </p>
         <div className="flex shrink-0 flex-col items-end gap-2">
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted">
             {answer?.score ?? 0} / {question.points} poin
           </p>
           {statusBadge && (
             <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge.className}`}
+              className={`pill ${statusBadge.className}`}
             >
               {statusBadge.label}
             </span>
@@ -170,9 +177,9 @@ function QuestionAnswer({
                 key={c.id}
                 className={
                   c.isCorrect
-                    ? "font-medium text-emerald-600"
+                    ? "font-medium text-forest"
                     : selected
-                      ? "font-medium text-red-600"
+                      ? "font-medium text-brick"
                       : ""
                 }
               >
@@ -183,7 +190,7 @@ function QuestionAnswer({
             );
           })}
           {isUnanswered && (
-            <li className="italic text-zinc-500">Peserta tidak memilih opsi apa pun.</li>
+            <li className="italic text-muted">Peserta tidak memilih opsi apa pun.</li>
           )}
         </ul>
       )}
@@ -196,13 +203,13 @@ function QuestionAnswer({
               {answer?.textAnswer?.trim() || "Tidak dijawab"}
             </span>
           </p>
-          <p className="text-zinc-500">Kunci jawaban: {question.correctTextAnswer}</p>
+          <p className="text-muted">Kunci jawaban: {question.correctTextAnswer}</p>
         </div>
       )}
 
       {question.type === "ESSAY" && (
         <div className="mt-3 space-y-2 text-sm">
-          <p className="whitespace-pre-wrap rounded-lg bg-zinc-50 p-3">
+          <p className="rounded-xl border-2 border-ink bg-white p-3 whitespace-pre-wrap">
             {answer?.textAnswer?.trim() || "Tidak dijawab"}
           </p>
           <div className="flex items-center gap-2">
@@ -212,21 +219,21 @@ function QuestionAnswer({
               max={question.points}
               value={score}
               onChange={(e) => setScore(e.target.value)}
-              className="w-24 rounded-lg border border-black/[.08] bg-white px-2 py-1 text-sm"
+              className="input w-24"
             />
             <button
               onClick={handleSaveScore}
               disabled={saving || !answer}
-              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm shadow-blue-200 disabled:opacity-70"
+              className="btn btn-primary btn-sm"
             >
               {saving && <Spinner className="h-3 w-3" />}
               {saving ? "Menyimpan..." : "Simpan Nilai"}
             </button>
             {answer?.needsManualGrading && (
-              <span className="text-xs text-amber-600">Belum dinilai</span>
+              <span className="text-xs text-brick font-medium">Belum dinilai</span>
             )}
           </div>
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-brick">{error}</p>}
         </div>
       )}
     </div>

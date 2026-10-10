@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 import { Spinner } from "@/components/Spinner";
 
 export default function NewExamPage() {
@@ -43,44 +44,51 @@ export default function NewExamPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-6 py-10">
-      <h1 className="mb-6 text-xl font-semibold">Buat Ujian Baru</h1>
+    <div className="shell max-w-lg">
+      <Link href="/admin" className="back-link mb-4 inline-block">
+        ← Kembali ke Dashboard
+      </Link>
+      <h1 className="mb-6 text-2xl font-semibold">
+        <span className="marker">Buat Ujian Baru</span>
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-1">
-          <label className="text-sm font-medium">Judul Ujian</label>
+          <label className="label">Judul Ujian</label>
           <input
             name="title"
             required
-            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
+            className="input"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium">Deskripsi</label>
+          <label className="label">Deskripsi</label>
           <textarea
             name="description"
-            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
+            className="input"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium">Durasi Pengerjaan (menit)</label>
+          <label className="label">Durasi Pengerjaan (menit)</label>
           <input
             name="durationMinutes"
             type="number"
             min={1}
             required
             defaultValue={60}
-            className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2"
+            className="input"
           />
         </div>
 
-        <div className="space-y-3 rounded-xl border border-black/[.08] bg-white/70 p-4 shadow-sm backdrop-blur">
+        <div className="space-y-3 card p-4">
           <label className="flex items-center justify-between text-sm font-medium">
             Anti Cheat
             <input
               type="checkbox"
+              role="switch"
+              className="switch"
               checked={antiCheatEnabled}
               onChange={(e) => setAntiCheatEnabled(e.target.checked)}
             />
@@ -88,7 +96,7 @@ export default function NewExamPage() {
 
           {antiCheatEnabled ? (
             <>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-muted">
                 Peserta tidak diperbolehkan berpindah tab, membuka jendela lain,
                 atau keluar dari halaman ujian. Pilih aksi saat peserta melanggar:
               </p>
@@ -97,7 +105,7 @@ export default function NewExamPage() {
                 <select
                   name="violationAction"
                   defaultValue="AUTO_SUBMIT"
-                  className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
+                  className="input"
                 >
                   <option value="WARN">Beri peringatan ke peserta</option>
                   <option value="LOG_ONLY">Catat pelanggaran saja (diam-diam)</option>
@@ -114,36 +122,42 @@ export default function NewExamPage() {
                   type="number"
                   min={0}
                   required
-                  defaultValue={0}
-                  className="w-full rounded-lg border border-black/[.08] bg-white px-3 py-2 text-sm"
+                  defaultValue={2}
+                  className="input"
                 />
               </div>
 
-              <label className="flex items-center gap-2 text-xs">
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
                 <input name="requireFullscreen" type="checkbox" />
                 Wajibkan mode fullscreen selama ujian
               </label>
+              <p className="text-xs text-muted">
+                Catatan: Safari di iPhone tidak mendukung mode fullscreen untuk
+                halaman web, sehingga syarat ini tidak berlaku bagi peserta iPhone.
+                Keluar halaman kurang dari 4 detik (mis. layar terkunci sesaat)
+                tidak dihitung sebagai pelanggaran.
+              </p>
             </>
           ) : (
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-muted">
               Anti Cheat nonaktif — peserta bebas berpindah tab, membuka aplikasi
               lain, atau keluar dari halaman ujian tanpa sanksi apa pun.
             </p>
           )}
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-brick">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-medium text-white shadow-sm shadow-blue-200 transition-transform hover:scale-[1.01] disabled:opacity-70"
+          className="btn btn-primary w-full"
         >
           {loading && <Spinner className="h-4 w-4" />}
           {loading ? "Menyimpan..." : "Simpan Ujian"}
         </button>
 
-        <p className="text-center text-xs text-zinc-500">
+        <p className="text-center text-xs text-muted">
           Setelah disimpan, Anda akan diarahkan ke halaman ujian untuk
           menambahkan soal sebelum publish.
         </p>

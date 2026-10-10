@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { expireOverdueSessions } from "@/lib/session-deadline";
 import { VIOLATION_REASON } from "@/lib/violation-labels";
 import { ExamDetail } from "./ExamDetail";
 
@@ -15,6 +16,13 @@ export default async function ExamDetailPage({
   if (!session?.user?.id) redirect("/admin/login");
 
   const { examId } = await params;
+
+  const owned = await prisma.exam.findFirst({
+    where: { id: examId, adminId: session.user.id },
+    select: { id: true },
+  });
+  if (!owned) notFound();
+  await expireOverdueSessions({ examId });
 
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
@@ -61,6 +69,7 @@ export default async function ExamDetailPage({
         return {
           id: s.id,
           participantName: s.participantName,
+          participantRef: s.participantRef,
           status: s.status,
           violationCount: s.violations.length,
           violationSummary,

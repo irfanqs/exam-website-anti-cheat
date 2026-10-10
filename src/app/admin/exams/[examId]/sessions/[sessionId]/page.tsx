@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { expireSession } from "@/lib/session-deadline";
 import { SessionGrading } from "./SessionGrading";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,14 @@ export default async function SessionDetailPage({
   if (!authSession?.user?.id) redirect("/admin/login");
 
   const { examId, sessionId } = await params;
+
+  // Tutup sesi yang waktunya sudah habis sebelum dimuat, supaya status &
+  // skor yang tampil sudah final.
+  const pending = await prisma.examSession.findFirst({
+    where: { id: sessionId, examId, exam: { adminId: authSession.user.id } },
+    select: { id: true, status: true, startedAt: true, exam: { select: { durationMinutes: true } } },
+  });
+  if (pending) await expireSession(pending, pending.exam);
 
   const examSession = await prisma.examSession.findUnique({
     where: { id: sessionId },

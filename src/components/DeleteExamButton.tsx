@@ -28,7 +28,7 @@ export function DeleteExamButton({ examId, title }: { examId: string; title: str
   return (
     <button
       onClick={handleDelete}
-      className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+      className="btn btn-sm btn-danger"
     >
       Hapus
     </button>
