@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Spinner } from "@/components/Spinner";
+import { fetchWithRetry } from "@/lib/fetch-with-retry";
+
+const JOIN_RETRY_DELAYS_MS = [1000, 2500];
 
 export default function JoinPage() {
   const router = useRouter();
@@ -21,11 +24,17 @@ export default function JoinPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ examCode, participantName, participantRef }),
-      });
+      // Aman diulang: server mengembalikan sesi yang sama untuk identitas yang
+      // sama (lihat /api/sessions), jadi retry tidak membuat sesi ganda.
+      const res = await fetchWithRetry(
+        "/api/sessions",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ examCode, participantName, participantRef }),
+        },
+        JOIN_RETRY_DELAYS_MS
+      );
 
       let data: { sessionId?: string; deadline?: string; error?: string };
       try {
@@ -51,8 +60,20 @@ export default function JoinPage() {
       // loading.tsx sendiri sambil query database berjalan.
     } catch (err) {
       setLoading(false);
+      const message = err instanceof Error ? err.message : String(err);
+      // fetch() hanya reject (TypeError "Failed to fetch") kalau request tidak
+      // sampai ke server sama sekali — biasanya sinyal HP putus/lemah.
+      if (err instanceof TypeError) {
+        setError(
+          "Koneksi internet terputus atau tidak stabil. Periksa sinyal/Wi-Fi lalu tekan Mulai Ujian lagi."
+        );
+        setDebugError(
+          `${message} (tidak ada respons dari server, online: ${navigator.onLine ? "ya" : "tidak"})`
+        );
+        return;
+      }
       setError("Terjadi kesalahan saat mencoba masuk ujian.");
-      setDebugError(err instanceof Error ? err.message : String(err));
+      setDebugError(message);
     }
   }
 

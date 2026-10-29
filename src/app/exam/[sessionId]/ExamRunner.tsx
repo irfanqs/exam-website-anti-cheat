@@ -8,6 +8,7 @@ import { Spinner } from "@/components/Spinner";
 import { Avatar } from "@/components/Avatar";
 import { ExamEndScreen } from "@/components/ExamEndScreen";
 import { VIOLATION_REASON } from "@/lib/violation-labels";
+import { fetchWithRetry } from "@/lib/fetch-with-retry";
 
 type Question = {
   id: string;
@@ -22,6 +23,10 @@ type AnswerPayload = { textAnswer?: string; choiceIds?: string[] };
 
 // Jawaban teks disimpan otomatis setelah peserta berhenti mengetik selama ini.
 const TEXT_AUTOSAVE_MS = 1500;
+
+// Jeda antar percobaan ulang saat koneksi peserta putus (total ~15 detik).
+// Simpan jawaban (upsert) dan submit sama-sama aman diulang.
+const SAVE_RETRY_DELAYS_MS = [1000, 2000, 4000, 8000];
 
 type DeviceInfo = { mobile: boolean; inAppBrowser: boolean };
 
@@ -74,7 +79,12 @@ export function ExamRunner({
   const [endMessage, setEndMessage] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const submitting = useRef(false);
+  // Payload terakhir per soal yang tetap gagal tersimpan setelah semua retry,
+  // dikirim ulang saat koneksi kembali atau sebelum submit.
+  const failedSaves = useRef(new Map<string, AnswerPayload>());
+  const [unsavedCount, setUnsavedCount] = useState(0);
   const pendingSaves = useRef<Promise<unknown>[]>([]);
   // Antrian per soal supaya request simpan untuk soal yang sama tidak
   // saling mendahului (jawaban lama menimpa jawaban baru).
@@ -102,22 +112,56 @@ export function ExamRunner({
   const saveAnswer = useCallback(
     (questionId: string, payload: AnswerPayload, keepalive = false) => {
       const previous = saveQueues.current.get(questionId) ?? Promise.resolve();
-      const promise = previous
+      const promise: Promise<unknown> = previous
         .catch(() => {})
-        .then(() =>
-          fetch("/api/answers", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId, questionId, ...payload }),
-            keepalive,
-          })
-        );
+        .then(async () => {
+          let saved: boolean;
+          try {
+            const res = await fetchWithRetry(
+              "/api/answers",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ sessionId, questionId, ...payload }),
+                keepalive,
+              },
+              SAVE_RETRY_DELAYS_MS
+            );
+            // 4xx (mis. sesi sudah berakhir) tidak akan berhasil walau diulang.
+            saved = res.status < 500;
+          } catch {
+            saved = false;
+          }
+          // Hanya catat kegagalan kalau tidak ada simpanan lebih baru untuk
+          // soal ini yang sudah mengantre di belakangnya.
+          if (saved) failedSaves.current.delete(questionId);
+          else if (saveQueues.current.get(questionId) === promise) {
+            failedSaves.current.set(questionId, payload);
+          }
+          setUnsavedCount(failedSaves.current.size);
+        });
       saveQueues.current.set(questionId, promise);
       pendingSaves.current.push(promise);
       return promise;
     },
     [sessionId]
   );
+
+  const retryFailedSaves = useCallback(() => {
+    const saves: Promise<unknown>[] = [];
+    for (const [questionId, payload] of failedSaves.current) {
+      saves.push(saveAnswer(questionId, payload));
+    }
+    return Promise.allSettled(saves);
+  }, [saveAnswer]);
+
+  useEffect(() => {
+    function handleOnline() {
+      void retryFailedSaves();
+    }
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [retryFailedSaves]);
 
   // Kirim semua jawaban teks yang belum tersimpan sekarang juga.
   const flushTextDrafts = useCallback(
@@ -208,26 +252,54 @@ export function ExamRunner({
       if (submitting.current) return;
       submitting.current = true;
       setIsSubmitting(true);
+      setSubmitError(null);
 
       // Tunggu semua autosave jawaban yang masih berjalan supaya server
       // menilai berdasarkan jawaban terbaru, bukan state yang belum tersimpan
       // (race condition: klik jawaban lalu langsung klik submit).
       await flushTextDrafts();
+      await retryFailedSaves();
       await Promise.allSettled(pendingSaves.current);
 
-      await fetch("/api/exam-sessions/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, reason }),
-      }).catch(() => {
-        // Sesi mungkin sudah ditandai submitted oleh /api/violations;
-        // kegagalan di sini tidak fatal karena server adalah source of truth.
-      });
+      // Submit manual dibatalkan kalau masih ada jawaban yang gagal tersimpan,
+      // supaya peserta bisa mencoba lagi setelah koneksi pulih. Submit karena
+      // waktu habis/pelanggaran tetap jalan: server menutup sesi saat deadline.
+      const abortManual = (message: string) => {
+        submitting.current = false;
+        setIsSubmitting(false);
+        setSubmitError(message);
+      };
+      if (reason === "manual" && failedSaves.current.size > 0) {
+        abortManual(
+          "Sebagian jawaban belum tersimpan karena koneksi terputus. Periksa sinyal/Wi-Fi lalu kirim lagi."
+        );
+        return;
+      }
+
+      const sent = await fetchWithRetry(
+        "/api/exam-sessions/submit",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, reason }),
+        },
+        SAVE_RETRY_DELAYS_MS
+      ).then(
+        (res) => res.ok,
+        () => false
+      );
+
+      if (!sent && reason === "manual") {
+        abortManual(
+          "Jawaban gagal dikirim karena koneksi terputus. Periksa sinyal/Wi-Fi lalu kirim lagi."
+        );
+        return;
+      }
 
       setSubmitted(true);
       router.refresh();
     },
-    [sessionId, router, flushTextDrafts]
+    [sessionId, router, flushTextDrafts, retryFailedSaves]
   );
 
   function handleViolation(result: {
@@ -429,6 +501,22 @@ export function ExamRunner({
             </div>
           </div>
         </div>
+      )}
+
+      {unsavedCount > 0 && !isSubmitting && (
+        <div className="mt-8 space-y-3 rounded-xl border-2 border-ink bg-sun p-4 text-sm">
+          <p>
+            <strong>{unsavedCount} jawaban</strong> belum tersimpan karena koneksi terputus.
+            Jawaban akan dikirim ulang otomatis saat koneksi kembali.
+          </p>
+          <button onClick={() => void retryFailedSaves()} className="btn w-full text-sm">
+            Coba Simpan Ulang
+          </button>
+        </div>
+      )}
+
+      {submitError && (
+        <p className="mt-8 text-sm font-medium text-brick">{submitError}</p>
       )}
 
       <button
